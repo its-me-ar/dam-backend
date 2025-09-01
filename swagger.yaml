@@ -3,10 +3,273 @@ info:
   title: DAM-backend API
   version: 1.0.0
   description: API documentation for DAM-backend application
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Health check passed"
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "OK"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@dam.com"
+        password:
+          type: string
+          format: password
+          example: "Admin@123"
+
+    LoginSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Login successful"
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: "jwt_token_here"
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "uuid_here"
+                full_name:
+                  type: string
+                  example: "Admin"
+                email:
+                  type: string
+                  example: "admin@dam.com"
+                role:
+                  type: string
+                  example: "ADMIN"
+
+    InviteRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+
+    InviteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Invitation sent successfully"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "uuid_here"
+            email:
+              type: string
+              example: "user@example.com"
+            status:
+              type: string
+              example: "PENDING"
+            invitedBy:
+              type: string
+              example: "uuid_of_admin"
+
+    RegisterInviteRequest:
+      type: object
+      required:
+        - email
+        - password
+        - invitationId
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "User@123"
+        invitationId:
+          type: string
+          example: "uuid_of_invitation"
+
+    RegisterInviteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Registration successful"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "uuid_here"
+            full_name:
+              type: string
+              example: "User Name"
+            email:
+              type: string
+              example: "user@example.com"
+            role:
+              type: string
+              example: "USER"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message here"
+
 paths:
   /api/health:
     get:
       summary: Health check
+      description: Returns service status
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      description: Login using email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginSuccessResponse"
+        "400":
+          description: Missing email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/invitations:
+    post:
+      summary: Invite a new user
+      description: Send an invitation email to a new user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteRequest"
+      responses:
+        "200":
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/register:
+    post:
+      summary: Register via invitation
+      description: Complete registration for an invited user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInviteRequest"
+      responses:
+        "200":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterInviteResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

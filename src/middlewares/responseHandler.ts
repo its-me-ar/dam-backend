@@ -9,17 +9,21 @@ export const responseHandler = (
     return res.json({ success: true, message, data });
   };
 
-  res.error = (message = "error", status = 500): Response => {
-    return res.status(status).json({ success: false, message });
+  res.error = <T = unknown>(
+    message = "error",
+    status = 500,
+    data?: T
+  ): Response => {
+    return res.status(status).json({ success: false, message, data });
   };
 
   next();
 };
 
-// Module augmentation (ESM-friendly)
+// Module augmentation
 declare module "express-serve-static-core" {
   interface Response {
     success: <T = unknown>(data: T, message?: string) => Response;
-    error: (message?: string, status?: number) => Response;
+    error: <T = unknown>(message?: string, status?: number, data?: T) => Response;
   }
 }

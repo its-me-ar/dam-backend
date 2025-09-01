@@ -1,5 +1,2 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 # Run commitlint on the current commit message
 npx commitlint --edit "$1"

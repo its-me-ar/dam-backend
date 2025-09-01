@@ -1,15 +1,21 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",                     // modern target
-    "module": "ESNext",                     // ESM instead of commonjs
-    "moduleResolution": "Node",             // resolves like Node.js
-    "outDir": "./dist",
-    "strict": true,
-    "esModuleInterop": true,                // keep interop support
-    "allowSyntheticDefaultImports": true,   // smooth imports
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "CommonJS",
+		"sourceMap": false,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		/* Strict Type-Checking Options */
+		"strict": true,
+		"noImplicitAny": true,
+		/* Module Resolution Options */
+		"moduleResolution": "node",
+		"baseUrl": "./",
+		"esModuleInterop": true,
+		/* Advanced Options */
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"lib": ["es2015"],
+	"include": ["src/**/*"]
 }

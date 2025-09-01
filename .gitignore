@@ -38,4 +38,4 @@ docker/*.log
 # Test coverage
 coverage/
 
-/src/generated/prisma
+generated/prisma

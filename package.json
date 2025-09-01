@@ -10,12 +10,15 @@
     "build:start": "nodemon ./dist/index.js",
     "prettier": "prettier --config ./.prettierrc.json --write src/**/*",
     "local": "docker-compose up -d && npm run dev",
-    "prod": "docker build -f docker/Dockerfile.prod -t dam-backend:latest ."
+    "prod": "docker build -f docker/Dockerfile.prod -t dam-backend:latest .",
+    "prisma:migrate": "npx prisma migrate dev --name",
+    "prisma:generate": "npx prisma generate",
+    "prisma:studio": "npx prisma studio",
+    "create:admin": "ts-node ./scripts/createAdmin.ts"
   },
   "lint-staged": {
     "src/**/*.{ts,js}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --fix"
     ]
   },
   "keywords": [],
@@ -24,23 +27,28 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.15.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "winston": "^3.17.0",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.34.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
     "@types/pg": "^8.15.5",
     "@types/swagger-ui-express": "^4.1.8",

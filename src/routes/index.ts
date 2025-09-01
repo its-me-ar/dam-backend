@@ -1,9 +1,12 @@
 import { Router } from "express";
-
+import authRoutes from "./auth";
+import invitationRoutes from "./invitation";
 const router = Router();
 
-router.get("/health", (req, res) => {
-  res.success({ status: "OK" }, "Health check passed");
+router.get("/health", (_req, res) => {
+	res.success({ status: "OK" }, "Health check passed");
 });
+router.use("/auth", authRoutes);
+router.use("/invitations", invitationRoutes);
 
 export default router;

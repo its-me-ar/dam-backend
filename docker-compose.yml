@@ -1,16 +1,16 @@
 version: "3.8"
 
 services:
-  dam-backend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.dev
-    ports:
-      - "4000:4000"
-    env_file:
-      - .env
-    depends_on:
-      - postgres
+  # dam-backend:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.dev
+  #   ports:
+  #     - "4000:4000"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - postgres
 
   postgres:
     image: postgres:16-alpine

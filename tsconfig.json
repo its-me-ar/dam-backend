@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",                     // modern target
+    "module": "ESNext",                     // ESM instead of commonjs
+    "moduleResolution": "Node",             // resolves like Node.js
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,                // keep interop support
+    "allowSyntheticDefaultImports": true,   // smooth imports
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

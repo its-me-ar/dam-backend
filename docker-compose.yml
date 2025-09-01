@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  dam-backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: dam-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dam_backend
+    ports:
+        - "5433:5432"   # Host port 5433 mapped to container 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

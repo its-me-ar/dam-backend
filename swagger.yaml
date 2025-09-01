@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: DAM-backend API
+  version: 1.0.0
+  description: API documentation for DAM-backend application
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK

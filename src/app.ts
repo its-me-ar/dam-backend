@@ -1,0 +1,27 @@
+import express, { NextFunction, Request, Response } from "express";
+import helmet from "helmet";
+import cors from "cors";
+import logger from "./config/logger";
+import { responseHandler } from "./middleware/responseHandler";
+import routes from "./routes";
+import swaggerUi from "swagger-ui-express";
+import yaml from "yamljs";
+
+const swaggerDoc = yaml.load("./swagger.yaml");
+
+const app = express();
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(responseHandler);
+
+app.use("/api", routes);
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  logger.error(err.message);
+  res.error("Internal Server Error");
+});
+
+export default app;

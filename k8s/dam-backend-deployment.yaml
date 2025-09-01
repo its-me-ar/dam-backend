@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dam-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dam-backend
+  template:
+    metadata:
+      labels:
+        app: dam-backend
+    spec:
+      containers:
+        - name: dam-backend
+          image: your-dockerhub-user/dam-backend:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: database-url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dam-backend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: dam-backend
+  ports:
+    - port: 80
+      targetPort: 4000

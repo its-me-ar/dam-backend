@@ -9,27 +9,63 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  full_name   String
-  email       String       @unique
-  role        Role
-  password    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String   @id @default(uuid())
+  full_name String
+  email     String   @unique
+  role      Role
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relation to invitations
   sentInvites Invitation[] @relation("UserInvitations")
+
+  // Relation to assets
+  assets Asset[] @relation("UserAssets")
 }
 
 model Invitation {
-  id         String         @id @default(uuid())
+  id         String           @id @default(uuid())
   email      String
   role       InvitationRole // only USER or MANAGER
   status     InvitationStatus @default(PENDING)
   inviteBy   String
-  invitedBy  User           @relation("UserInvitations", fields: [inviteBy], references: [id])
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @default(now()) @updatedAt
+  invitedBy  User             @relation("UserInvitations", fields: [inviteBy], references: [id])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @default(now()) @updatedAt
   acceptedAt DateTime?
+}
+
+model Asset {
+  asset_id     String          @id @default(uuid())
+  filename     String          @db.VarChar(255)
+  mime_type    String          @db.VarChar(50)
+  storage_path String          @db.VarChar(255)
+  uploader_id  String
+  uploader     User            @relation("UserAssets", fields: [uploader_id], references: [id])
+  group_id     String? // nullable
+  size_bytes   Int
+  status       AssetStatus     @default(START)
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+  // Relation to metadata
+  metadata     AssetMetadata[]
+  
+}
+
+model AssetMetadata {
+  metadata_id String   @id @default(uuid())
+  asset_id    String
+  asset       Asset    @relation(fields: [asset_id], references: [asset_id])
+  key         String
+  value       String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+enum AssetStatus {
+  START
+  COMPLETED
 }
 
 enum Role {

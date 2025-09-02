@@ -156,12 +156,78 @@ components:
     ErrorResponse:
       type: object
       properties:
-        success:
-          type: boolean
-          example: false
+        status:
+          type: string
+          example: error
         message:
           type: string
-          example: "Error message here"
+          example: Validation error
+
+    PresignUploadRequest:
+      type: object
+      required:
+        - filename
+        - mime_type
+        - size_bytes
+      properties:
+        filename:
+          type: string
+          description: Name of the file to upload
+          example: dam.pdf
+        mime_type:
+          type: string
+          description: MIME type or shorthand file type
+          example: application/pdf
+        size_bytes:
+          type: integer
+          description: Size of the file in bytes
+          example: 1048576
+
+    PresignUploadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Presigned upload URL generated
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+              description: Presigned S3 upload URL
+              example: https://bucket-name.s3.amazonaws.com/assets/uuid/document.pdf?X-Amz-Algorithm=...
+            asset_id:
+              type: string
+              description: ID of the created or reused asset
+              example: "d3f6b8a1-4b90-4a38-bc9e-88e1e176f1a2"
+
+    CompleteAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset status updated to COMPLETED
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              example: "uuid_here"
+            status:
+              type: string
+              example: COMPLETED
+            storage_path:
+              type: string
+              example: "uploads/file.pdf"
+            uploader_id:
+              type: string
+              example: "uuid_of_uploader"
 
 paths:
   /api/health:
@@ -263,6 +329,94 @@ paths:
                 $ref: "#/components/schemas/RegisterInviteResponse"
         "400":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/upload/presign:
+    post:
+      summary: Generate a presigned upload URL
+      description: Returns a presigned S3 URL for uploading a file. Creates an asset record if it doesn't already exist.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PresignUploadRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresignUploadResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid token)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to generate presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/upload/complete:
+    post:
+      summary: Complete asset upload
+      description: Mark an uploaded asset as COMPLETED
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+              properties:
+                asset_id:
+                  type: string
+                  example: "uuid_here"
+      responses:
+        "200":
+          description: Asset marked as COMPLETED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteAssetResponse"
+        "400":
+          description: Validation error or already completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Asset not found
           content:
             application/json:
               schema:

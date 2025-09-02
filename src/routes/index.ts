@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./auth";
 import invitationRoutes from "./invitation";
+import assetsRoutes from "./upload";
 const router = Router();
 
 router.get("/health", (_req, res) => {
@@ -8,5 +9,6 @@ router.get("/health", (_req, res) => {
 });
 router.use("/auth", authRoutes);
 router.use("/invitations", invitationRoutes);
+router.use("/uploads", assetsRoutes);
 
 export default router;

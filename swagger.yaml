@@ -427,3 +427,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/assets:
+    get:
+      summary: List all assets for authenticated user
+      description: Retrieve all assets uploaded by the authenticated user, including metadata.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of user assets including metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User assets fetched successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_id:
+                          type: string
+                          format: uuid
+                          example: "uuid_here"
+                        filename:
+                          type: string
+                          example: "file.pdf"
+                        mime_type:
+                          type: string
+                          example: "application/pdf"
+                        storage_path:
+                          type: string
+                          example: "uploads/file.pdf"
+                        size_bytes:
+                          type: integer
+                          example: 1048576
+                        status:
+                          type: string
+                          example: COMPLETED
+                        uploader_id:
+                          type: string
+                          format: uuid
+                          example: "uuid_of_uploader"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2023-08-25T12:34:56Z"
+                        updated_at:
+                          type: string
+                          format: date-time
+                          example: "2023-08-25T12:45:00Z"
+                        metadata:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              metadata_id:
+                                type: string
+                                format: uuid
+                                example: "uuid_metadata"
+                              key:
+                                type: string
+                                example: "video_variants"
+                              value:
+                                type: object
+                                example: 
+                                  original: 
+                                    path: "uploads/original.mp4"
+                                    width: 1920
+                                    height: 1080
+                                    size: 1048576
+                              created_at:
+                                type: string
+                                format: date-time
+                                example: "2023-08-25T12:34:56Z"
+                              updated_at:
+                                type: string
+                                format: date-time
+                                example: "2023-08-25T12:45:00Z"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Unauthorized
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Failed to fetch user assets

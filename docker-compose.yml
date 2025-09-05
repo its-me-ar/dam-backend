@@ -12,6 +12,7 @@ services:
   #   depends_on:
   #     - postgres
   #     - minio
+  #     - redis
 
   postgres:
     image: postgres:16-alpine
@@ -21,7 +22,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: dam_backend
     ports:
-      - "5433:5432"   # Host port 5433 mapped to container 5432
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -38,6 +39,15 @@ services:
     volumes:
       - minio_data:/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: dam-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   pgdata:
   minio_data:
+  redis_data:

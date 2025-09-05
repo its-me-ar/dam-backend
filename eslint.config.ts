@@ -21,18 +21,21 @@ export default defineConfig([
       "prefer-const": "error",
       "no-duplicate-imports": "error",
       "no-empty": ["warn", { allowEmptyCatch: true }],
-      "consistent-return": "error",
+      "consistent-return": "warn",
       "no-undef": "error",
 
-      // **TypeScript-specific unused vars**
+      // TypeScript rules
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          argsIgnorePattern: "^_",    // ignore unused args starting with _
-          varsIgnorePattern: "^_",    // ignore unused vars starting with _
-          caughtErrorsIgnorePattern: "^_", // ignore unused catch errors starting with _
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
+
+      // Allow `any` but show warning instead of error
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 

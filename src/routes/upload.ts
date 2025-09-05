@@ -5,18 +5,21 @@ import { filenameQuerySchema } from "src/schemas/assetsSchema";
 import {
 	getPresignedUploadUrl,
 	completeAssetUpload,
+	getUserAssets,
 } from "src/controllers/assetsController";
 
 const router = Router();
 
 // POST /upload/presign
 router.post(
-	"/presign",
+	"/uploads/presign",
 	authenticate,
 	validate(filenameQuerySchema),
 	getPresignedUploadUrl,
 );
 // POST /upload/complete
-router.post("/complete", authenticate, completeAssetUpload);
+router.post("/uploads/complete", authenticate, completeAssetUpload);
+
+router.get("/",authenticate,getUserAssets)
 
 export default router;

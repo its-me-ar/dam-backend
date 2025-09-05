@@ -10,6 +10,9 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
+import { Readable } from "stream";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -105,5 +108,38 @@ export class S3Service {
 			}
 			throw err; // other errors (network, permissions)
 		}
+	}
+
+	/**
+	 * Download file from S3 and return as Buffer
+	 */
+	async download(key: string): Promise<Buffer> {
+		const command: GetObjectCommandInput = { Bucket: this.bucket, Key: key };
+		const response = await this.client.send(new GetObjectCommand(command));
+
+		if (!response.Body) {
+			throw new Error("No file body returned from S3");
+		}
+
+		const stream = response.Body as Readable;
+		const chunks: Buffer[] = [];
+
+		for await (const chunk of stream) {
+			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+		}
+
+		return Buffer.concat(chunks);
+	}
+
+	/**
+	 * Download file from S3 and save to local file system
+	 */
+	async downloadToFile(key: string, localPath: string): Promise<void> {
+		const buffer = await this.download(key);
+
+		// ensure directory exists
+		fs.mkdirSync(path.dirname(localPath), { recursive: true });
+
+		await fs.promises.writeFile(localPath, buffer);
 	}
 }

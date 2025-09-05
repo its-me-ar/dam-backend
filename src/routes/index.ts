@@ -9,6 +9,6 @@ router.get("/health", (_req, res) => {
 });
 router.use("/auth", authRoutes);
 router.use("/invitations", invitationRoutes);
-router.use("/uploads", assetsRoutes);
+router.use("/assets", assetsRoutes);
 
 export default router;

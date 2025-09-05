@@ -58,9 +58,11 @@ model AssetMetadata {
   asset_id    String
   asset       Asset    @relation(fields: [asset_id], references: [asset_id])
   key         String
-  value       String
+  value       Json
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+
+  @@unique([asset_id, key])
 }
 
 enum AssetStatus {

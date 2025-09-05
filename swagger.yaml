@@ -340,7 +340,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /api/upload/presign:
+  /api/assets/upload/presign:
     post:
       summary: Generate a presigned upload URL
       description: Returns a presigned S3 URL for uploading a file. Creates an asset record if it doesn't already exist.
@@ -378,7 +378,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /api/upload/complete:
+  /api/assets/upload/complete:
     post:
       summary: Complete asset upload
       description: Mark an uploaded asset as COMPLETED

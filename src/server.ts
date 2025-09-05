@@ -1,4 +1,3 @@
-// src/server.ts
 import app from "./app";
 import logger from "./config/logger";
 import pool from "./db";

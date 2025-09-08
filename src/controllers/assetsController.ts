@@ -198,7 +198,7 @@ export const getUserAssets = async (req: Request, res: Response) => {
 		}
 
 		const assets = await prisma.asset.findMany({
-			where: { uploader_id: userId },
+			where: { uploader_id: userId, AND : { status: AssetStatus.COMPLETED } },
 			include: { metadata: true }, // include AssetMetadata
 			orderBy: { created_at: "desc" },
 		});

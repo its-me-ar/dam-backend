@@ -6,6 +6,7 @@ import {
 	getPresignedUploadUrl,
 	completeAssetUpload,
 	getUserAssets,
+	getAssetById,
 } from "src/controllers/assetsController";
 
 const router = Router();
@@ -19,7 +20,9 @@ router.post(
 );
 // POST /upload/complete
 router.post("/uploads/complete", authenticate, completeAssetUpload);
+// Get /upload
+router.get("/", authenticate, getUserAssets);
 
-router.get("/",authenticate,getUserAssets)
+router.get("/:id", authenticate, getAssetById);
 
 export default router;

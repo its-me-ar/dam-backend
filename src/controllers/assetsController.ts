@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { S3Service } from "../services/S3Service";
 import logger from "src/config/logger";
-import { PrismaClient, AssetStatus } from "generated/prisma";
+import { PrismaClient, AssetStatus, Prisma } from "generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { videoQueue } from "src/queues/video.queue";
 import { imageQueue } from "src/queues/image.queue";
@@ -189,23 +189,42 @@ export const completeAssetUpload = async (req: Request, res: Response) => {
  * GET /api/assets
  * Returns all assets of the logged-in user with metadata
  */
+
 export const getUserAssets = async (req: Request, res: Response) => {
 	try {
 		const userId = req.user?.userId;
+		const userRole = req.user?.role;
 
 		if (!userId) {
 			return res.status(401).json({ status: "error", message: "Unauthorized" });
 		}
 
+		// If admin or manager → fetch all assets
+		const isPrivileged = userRole === "ADMIN" || userRole === "MANAGER";
+
 		const assets = await prisma.asset.findMany({
-			where: { uploader_id: userId, AND : { status: AssetStatus.COMPLETED } },
-			include: { metadata: true }, // include AssetMetadata
+			where: isPrivileged
+				? { status: AssetStatus.COMPLETED }
+				: { uploader_id: userId, status: AssetStatus.COMPLETED },
+			include: {
+				metadata: true,
+				uploader: {
+					select: {
+						id: true,
+						full_name: true,
+						email: true,
+						role: true,
+					},
+				},
+			},
 			orderBy: { created_at: "desc" },
 		});
 
 		return res.status(200).json({
 			status: "success",
-			message: "User assets fetched successfully",
+			message: isPrivileged
+				? "All assets fetched successfully"
+				: "User assets fetched successfully",
 			data: assets,
 		});
 	} catch (err: unknown) {
@@ -221,5 +240,94 @@ export const getUserAssets = async (req: Request, res: Response) => {
 			status: "error",
 			message: "Failed to fetch user assets",
 		});
+	}
+};
+
+/**
+ * GET /api/assets/:id
+ * Returns pre-signed download URLs for the asset and its metadata (e.g., 480p, 720p versions)
+ */
+export const getAssetById = async (req: Request, res: Response) => {
+	try {
+		const userId = req.user?.userId;
+		const userRole = req.user?.role;
+		const { id } = req.params;
+
+		if (!userId) {
+			return res.status(401).json({ status: "error", message: "Unauthorized" });
+		}
+
+		// Fetch the asset including uploader (to check ownership)
+		const asset = await prisma.asset.findFirst({
+			where: { asset_id: id, status: AssetStatus.COMPLETED },
+			include: { metadata: true, uploader: true },
+		});
+
+		if (!asset) {
+			return res
+				.status(404)
+				.json({ status: "error", message: "Asset not found" });
+		}
+
+		// Only uploader OR Admin/Manager can access
+		const isPrivileged = userRole === "ADMIN" || userRole === "MANAGER";
+		if (!isPrivileged && asset.uploader_id !== userId) {
+			return res.status(403).json({ status: "error", message: "Forbidden" });
+		}
+
+		// Build presigned URLs
+		const paths: Record<string, string> = {};
+
+		// Original file
+		if (asset.storage_path) {
+			paths["original"] = await s3Service.getPresignedDownloadUrl(
+				asset.storage_path,
+			);
+		}
+
+		// Variants from metadata (480p, 720p)
+		for (const meta of asset.metadata) {
+			if (
+				meta.value &&
+				typeof meta.value === "object" &&
+				!Array.isArray(meta.value)
+			) {
+				const val = meta.value as Prisma.JsonObject;
+
+				for (const reso of ["480p", "720p"]) {
+					const variant = val[reso];
+					if (
+						variant &&
+						typeof variant === "object" &&
+						!Array.isArray(variant)
+					) {
+						const path = (variant as Prisma.JsonObject)["path"];
+						if (typeof path === "string") {
+							paths[reso] = await s3Service.getPresignedDownloadUrl(path);
+						}
+					}
+				}
+			}
+		}
+
+		return res.status(200).json({
+			status: "success",
+			message: "Asset paths fetched successfully",
+			data: {
+				asset_id: asset.asset_id,
+				filename: asset.filename,
+				mime_type: asset.mime_type,
+				uploader: {
+					id: asset.uploader.id,
+					full_name: asset.uploader.full_name,
+					email: asset.uploader.email,
+					role: asset.uploader.role,
+				},
+				paths,
+			},
+		});
+	} catch (error) {
+		console.error("getAssetById error:", error);
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 };

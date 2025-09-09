@@ -10,6 +10,7 @@ import logger from "src/config/logger";
 import { extractVideoMetadata } from "src/utils/extractVideoMetadata";
 import { upsertVideoMetadata } from "src/utils/upsertVideoMetadata";
 import { thumbnailQueue, uploadQueue } from "src/queues/video.queue";
+import { PrismaClient, JobStatus } from "generated/prisma";
 
 interface TranscodeJobData {
 	asset_id: string;
@@ -17,6 +18,7 @@ interface TranscodeJobData {
 }
 
 const s3Service = new S3Service();
+const prisma = new PrismaClient();
 
 if (!ffmpegPath) {
 	throw new Error(
@@ -58,10 +60,13 @@ const videoWorker = new Worker<TranscodeJobData>(
 			);
 
 			// 4. Enqueue thumbnail generation job
-			await thumbnailQueue.add("generate-thumbnail", {
+			const thumbJob = await thumbnailQueue.add("generate-thumbnail", {
 				asset_id,
 				localPath: localInput,
 				storagePath: storage_path,
+			});
+			await prisma.transcodingJob.create({
+				data: { asset_id, job_id: String(thumbJob.id), status: JobStatus.PENDING, worker_name: "video-thumbnail", event_name: "enqueued" },
 			});
 			logger.info(
 				`[Worker] 🖼️ Enqueued thumbnail generation for asset_id=${asset_id}`,
@@ -110,12 +115,15 @@ const videoWorker = new Worker<TranscodeJobData>(
 				);
 
 				// Enqueue upload job
-				await uploadQueue.add("upload", {
+				const uploadJob = await uploadQueue.add("upload", {
 					asset_id,
 					resolution: res,
 					presignedUrl,
 					localPath: outputFile,
 					s3Key: outputKey,
+				});
+				await prisma.transcodingJob.create({
+					data: { asset_id, job_id: String(uploadJob.id), status: JobStatus.PENDING, worker_name: "video-upload", event_name: "enqueued" },
 				});
 
 				// Save transcoded metadata
@@ -153,11 +161,22 @@ const videoWorker = new Worker<TranscodeJobData>(
 videoWorker.on("active", job =>
 	logger.debug(`[Worker] 🔄 Job ${job.id} started`),
 );
-videoWorker.on("completed", job =>
-	logger.info(`[Worker] ✅ Job ${job.id} completed`),
-);
-videoWorker.on("failed", (job, err) =>
-	logger.error(`[Worker] ❌ Job ${job?.id} failed: ${err.message}`),
-);
+videoWorker.on("active", job => {
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE } })
+		.catch(() => {});
+});
+videoWorker.on("completed", job => {
+	logger.info(`[Worker] ✅ Job ${job.id} completed`);
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED } })
+		.catch(() => {});
+});
+videoWorker.on("failed", (job, err) => {
+	logger.error(`[Worker] ❌ Job ${job?.id} failed: ${err.message}`);
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED } })
+		.catch(() => {});
+});
 
 export default videoWorker;

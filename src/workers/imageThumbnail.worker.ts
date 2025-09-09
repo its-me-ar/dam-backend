@@ -7,6 +7,7 @@ import { S3Service } from "src/services/S3Service";
 import connection from "src/config/redis";
 import logger from "src/config/logger";
 import { upsertImageMetadata } from "src/utils/upsertImageMetadata";
+import { PrismaClient, JobStatus } from "generated/prisma";
 
 interface ImageThumbnailJobData {
 	asset_id: string;
@@ -15,6 +16,7 @@ interface ImageThumbnailJobData {
 }
 
 const s3Service = new S3Service();
+const prisma = new PrismaClient();
 
 const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 	"image-thumbnail",
@@ -87,6 +89,28 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 		}
 	},
 	{ connection },
+);
+
+imageThumbnailWorker.on("active", job =>
+	prisma.transcodingJob.update({
+		where: { job_id: String(job.id) },
+		data: { status: JobStatus.ACTIVE, worker_name: "image-thumbnail", event_name: "active" },
+	}).catch(() => {}),
+);
+imageThumbnailWorker.on("completed", job => {
+	prisma.transcodingJob
+		.update({
+			where: { job_id: String(job.id) },
+			data: { status: JobStatus.COMPLETED, worker_name: "image-thumbnail", event_name: "completed" },
+		})
+		.catch(() => {});
+
+});
+imageThumbnailWorker.on("failed", (job, _err) =>
+	prisma.transcodingJob.update({
+		where: { job_id: String(job?.id) },
+		data: { status: JobStatus.FAILED, worker_name: "image-thumbnail", event_name: "failed" },
+	}).catch(() => {}),
 );
 
 export default imageThumbnailWorker;

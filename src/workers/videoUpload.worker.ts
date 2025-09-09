@@ -3,6 +3,7 @@ import fs from "fs";
 import axios from "axios";
 import connection from "src/config/redis";
 import logger from "src/config/logger";
+import { PrismaClient, JobStatus } from "generated/prisma";
 
 interface UploadJobData {
 	asset_id: string;
@@ -11,6 +12,8 @@ interface UploadJobData {
 	localPath: string;
 	s3Key: string; // pass the final S3 key from transcoding worker
 }
+
+const prisma = new PrismaClient();
 
 const videoUploadWorker = new Worker<UploadJobData>(
 	"video-upload",
@@ -54,14 +57,23 @@ const videoUploadWorker = new Worker<UploadJobData>(
 );
 
 // Worker lifecycle events
-videoUploadWorker.on("active", job =>
-	logger.debug(`[UploadWorker] 🔄 Job ${job.id} started`),
-);
-videoUploadWorker.on("completed", job =>
-	logger.info(`[UploadWorker] ✅ Job ${job.id} completed`),
-);
-videoUploadWorker.on("failed", (job, err) =>
-	logger.error(`[UploadWorker] ❌ Job ${job?.id} failed: ${err.message}`),
-);
+videoUploadWorker.on("active", job => {
+	logger.debug(`[UploadWorker] 🔄 Job ${job.id} started`);
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE, worker_name: "video-upload", event_name: "active" } })
+		.catch(() => {});
+});
+videoUploadWorker.on("completed", job => {
+	logger.info(`[UploadWorker] ✅ Job ${job.id} completed`);
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED, worker_name: "video-upload", event_name: "completed" } })
+		.catch(() => {});
+});
+videoUploadWorker.on("failed", (job, err) => {
+	logger.error(`[UploadWorker] ❌ Job ${job?.id} failed: ${err.message}`);
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED, worker_name: "video-upload", event_name: "failed" } })
+		.catch(() => {});
+});
 
 export default videoUploadWorker;

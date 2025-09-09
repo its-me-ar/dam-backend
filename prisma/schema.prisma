@@ -50,6 +50,8 @@ model Asset {
   updated_at   DateTime        @updatedAt
   // Relation to metadata
   metadata     AssetMetadata[]
+  // Relation to transcoding jobs
+  transcodingJobs TranscodingJob[]
   
 }
 
@@ -84,4 +86,26 @@ enum InvitationStatus {
 enum InvitationRole {
   USER
   MANAGER
+}
+
+model TranscodingJob {
+  id         String    @id @default(uuid())
+  asset_id   String
+  job_id     String    @unique
+  worker_name String   @default("unknown")
+  event_name  String   @default("enqueued")
+  status     JobStatus @default(PENDING)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  asset Asset @relation(fields: [asset_id], references: [asset_id])
+
+  @@index([asset_id])
+}
+
+enum JobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  FAILED
 }

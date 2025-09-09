@@ -6,6 +6,7 @@ import connection from "src/config/redis";
 import logger from "src/config/logger";
 import { imageThumbnailQueue } from "src/queues/image.queue";
 import { upsertImageMetadata } from "src/utils/upsertImageMetadata";
+import { PrismaClient, JobStatus } from "generated/prisma";
 
 interface ImageJobData {
 	asset_id: string;
@@ -13,6 +14,7 @@ interface ImageJobData {
 }
 
 const s3Service = new S3Service();
+const prisma = new PrismaClient();
 
 const imageWorker = new Worker<ImageJobData>(
 	"image-processing",
@@ -48,10 +50,13 @@ const imageWorker = new Worker<ImageJobData>(
 			);
 
 			// 4. Enqueue thumbnail generation
-			await imageThumbnailQueue.add("generate-thumbnail", {
+			const thumbJob = await imageThumbnailQueue.add("generate-thumbnail", {
 				asset_id,
 				localPath: localInput,
 				storagePath: storage_path,
+			});
+			await prisma.transcodingJob.create({
+				data: { asset_id, job_id: String(thumbJob.id), status: JobStatus.PENDING, worker_name: "image-thumbnail", event_name: "enqueued" },
 			});
 			logger.info(
 				`[ImageWorker] 🖼️ Enqueued thumbnail generation for asset_id=${asset_id}`,
@@ -65,6 +70,22 @@ const imageWorker = new Worker<ImageJobData>(
 		}
 	},
 	{ connection },
+);
+
+imageWorker.on("active", job =>
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE, worker_name: "image-processing", event_name: "active" } })
+		.catch(() => {}),
+);
+imageWorker.on("completed", job =>
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED, worker_name: "image-processing", event_name: "completed" } })
+		.catch(() => {}),
+);
+imageWorker.on("failed", (job) =>
+	prisma.transcodingJob
+		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED, worker_name: "image-processing", event_name: "failed" } })
+		.catch(() => {}),
 );
 
 export default imageWorker;

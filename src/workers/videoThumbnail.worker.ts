@@ -9,6 +9,7 @@ import { S3Service } from "src/services/S3Service";
 import connection from "src/config/redis";
 import logger from "src/config/logger";
 import { upsertVideoMetadata } from "src/utils/upsertVideoMetadata";
+import { PrismaClient, JobStatus } from "generated/prisma";
 
 // Ensure ffmpeg binary is available
 if (!ffmpegPath) {
@@ -21,6 +22,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath.path);
 
 const s3Service = new S3Service();
+const prisma = new PrismaClient();
 
 interface ThumbnailJobData {
 	asset_id: string;
@@ -101,6 +103,28 @@ const videoThumbnailWorker = new Worker<ThumbnailJobData>(
 		}
 	},
 	{ connection },
+);
+
+videoThumbnailWorker.on("active", job =>
+	prisma.transcodingJob.update({
+		where: { job_id: String(job.id) },
+		data: { status: JobStatus.ACTIVE, worker_name: "video-thumbnail", event_name: "active" },
+	}).catch(() => {}),
+);
+videoThumbnailWorker.on("completed", job => {
+	prisma.transcodingJob
+		.update({
+			where: { job_id: String(job.id) },
+			data: { status: JobStatus.COMPLETED, worker_name: "video-thumbnail", event_name: "completed" },
+		})
+		.catch(() => {});
+
+});
+videoThumbnailWorker.on("failed", (job, _err) =>
+	prisma.transcodingJob.update({
+		where: { job_id: String(job?.id) },
+		data: { status: JobStatus.FAILED, worker_name: "video-thumbnail", event_name: "failed" },
+	}).catch(() => {}),
 );
 
 export default videoThumbnailWorker;

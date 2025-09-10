@@ -46,7 +46,7 @@ export const authenticate = async (
 		req.user = { userId: user.id, role: user.role };
 		return next();
 	} catch (err) {
-		console.error(err);
+		logger.error("authMiddleware error:", err);
 		return res.error("Invalid or expired token", 401);
 	}
 };

@@ -13,6 +13,10 @@
 		"test": "jest",
 		"test:coverage": "jest --coverage",
 		"test:watch": "jest --watch",
+		"test:assets": "jest --testPathPattern=assets",
+		"test:ci": "npm run type-check && npm run lint && npm run test:coverage",
+		"build:swagger": "node scripts/build-swagger.js",
+		"swagger:build": "npm run build:swagger",
 		"local": "docker-compose up -d && npm run dev",
 		"prod": "docker build -f docker/Dockerfile.prod -t dam-backend:latest .",
 		"prisma:migrate": "npx prisma migrate dev --name",
@@ -33,23 +37,6 @@
 		"src/**/*.{ts,js}": [
 			"eslint --fix"
 		]
-	},
-	"jest": {
-		"preset": "ts-jest",
-		"testEnvironment": "node",
-		"roots": ["<rootDir>/src"],
-		"testMatch": ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
-		"transform": {
-			"^.+\\.ts$": "ts-jest"
-		},
-		"collectCoverageFrom": [
-			"src/**/*.ts",
-			"!src/**/*.d.ts",
-			"!src/**/__tests__/**",
-			"!src/**/index.ts"
-		],
-		"coverageDirectory": "coverage",
-		"coverageReporters": ["text", "lcov", "html"]
 	},
 	"keywords": [],
 	"author": "",
@@ -93,8 +80,8 @@
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^24.3.0",
 		"@types/pg": "^8.15.5",
-		"@types/swagger-ui-express": "^4.1.8",
 		"@types/supertest": "^6.0.2",
+		"@types/swagger-ui-express": "^4.1.8",
 		"@types/yamljs": "^0.2.34",
 		"@typescript-eslint/eslint-plugin": "^8.41.0",
 		"@typescript-eslint/parser": "^8.41.0",
@@ -104,6 +91,7 @@
 		"i": "^0.3.7",
 		"jest": "^29.7.0",
 		"jiti": "^2.5.1",
+		"js-yaml": "^4.1.0",
 		"nodemon": "^3.1.0",
 		"npm": "^11.6.0",
 		"prettier": "^3.3.3",

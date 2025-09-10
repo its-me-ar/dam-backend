@@ -1,0 +1,115 @@
+paths:
+  /api/invitations:
+    post:
+      summary: Invite a new user
+      description: Send an invitation email to a new user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/invitation.yaml#/components/schemas/InviteRequest'
+      responses:
+        "200":
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/invitation.yaml#/components/schemas/InviteResponse'
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+    get:
+      summary: Get all invitations
+      description: Retrieve all invitations (ADMIN/MANAGER only)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Invitations fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/invitation.yaml#/components/schemas/InvitationsListResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "403":
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/invitations/{id}/reinvite:
+    put:
+      summary: Resend invitation
+      description: Resend an invitation email (ADMIN/MANAGER only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Invitation ID
+          example: "invitation-uuid-here"
+      responses:
+        "200":
+          description: Invitation resent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/invitation.yaml#/components/schemas/InviteResponse'
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "403":
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'

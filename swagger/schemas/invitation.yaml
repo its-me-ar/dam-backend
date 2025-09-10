@@ -1,0 +1,74 @@
+components:
+  schemas:
+    InviteRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+
+    InviteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Invitation sent successfully"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "uuid_here"
+            email:
+              type: string
+              example: "user@example.com"
+            status:
+              type: string
+              example: "PENDING"
+            invitedBy:
+              type: string
+              example: "uuid_of_admin"
+
+    InvitationsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Invitations fetched successfully"
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "invitation-uuid-here"
+              email:
+                type: string
+                format: email
+                example: "user@example.com"
+              status:
+                type: string
+                example: "PENDING"
+              invitedBy:
+                type: string
+                format: uuid
+                example: "admin-uuid-here"
+              createdAt:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              updatedAt:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"

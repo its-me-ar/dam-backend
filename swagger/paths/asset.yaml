@@ -1,0 +1,213 @@
+paths:
+  /api/assets/uploads/presign:
+    post:
+      summary: Generate a presigned upload URL
+      description: Returns a presigned S3 URL for uploading a file. Creates an asset record if it doesn't already exist.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/asset.yaml#/components/schemas/PresignUploadRequest'
+      responses:
+        "200":
+          description: Presigned upload URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/PresignUploadResponse'
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized (missing or invalid token)
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Failed to generate presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/uploads/complete:
+    post:
+      summary: Complete asset upload
+      description: Mark an uploaded asset as COMPLETED
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+              properties:
+                asset_id:
+                  type: string
+                  example: "uuid_here"
+      responses:
+        "200":
+          description: Asset marked as COMPLETED
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/CompleteAssetResponse'
+        "400":
+          description: Validation error or already completed
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets:
+    get:
+      summary: List all assets for authenticated user
+      description: Retrieve all assets uploaded by the authenticated user, including shared assets and metadata.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of user assets including metadata and shared assets
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/AssetListResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/jobs:
+    get:
+      summary: Get processing jobs
+      description: Retrieve processing jobs (PENDING/ACTIVE/FAILED) for the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Processing jobs fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/ProcessingJobsResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/metrics:
+    get:
+      summary: Get asset metrics
+      description: Retrieve asset metrics including total assets, storage used, and recent uploads
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Asset metrics fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/AssetMetricsResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/{id}:
+    get:
+      summary: Get asset by ID
+      description: Retrieve a specific asset by ID with presigned download URLs (owner, admin/manager, or users with shared access)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset details with download URLs
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/asset.yaml#/components/schemas/AssetDetailResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "403":
+          description: Forbidden - not owner, admin/manager, or shared with user
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'

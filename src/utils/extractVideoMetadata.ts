@@ -31,14 +31,12 @@ export function extractVideoMetadata(filePath: string): Promise<VideoMetadata> {
 				);
 			}
 
-			resolve({
+			return resolve({
 				duration: metadata.format.duration || 0,
 				width: videoStream.width,
 				height: videoStream.height,
 				size,
 			});
-
-			return;
 		});
 	});
 }

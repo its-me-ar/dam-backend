@@ -1,0 +1,446 @@
+components:
+  schemas:
+    CreateShareRequest:
+      type: object
+      required:
+        - asset_id
+        - share_type
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          description: ID of the asset to share
+          example: "d3f6b8a1-4b90-4a38-bc9e-88e1e176f1a2"
+        share_type:
+          type: string
+          enum: [PUBLIC, RESTRICTED]
+          description: Type of sharing - PUBLIC (anyone with link) or RESTRICTED (specific users)
+          example: "RESTRICTED"
+        user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of user IDs for RESTRICTED shares (required when share_type is RESTRICTED)
+          example: ["user-uuid-1", "user-uuid-2", "user-uuid-3"]
+
+    CreateShareResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset shared successfully
+        data:
+          type: object
+          properties:
+            shares:
+              type: array
+              items:
+                type: object
+                properties:
+                  share_id:
+                    type: string
+                    format: uuid
+                    example: "share-uuid-here"
+                  share_token:
+                    type: string
+                    example: "unique-share-token"
+                  share_type:
+                    type: string
+                    example: "RESTRICTED"
+                  user_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    example: "user-uuid-here"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+            total_shares:
+              type: integer
+              example: 3
+
+    DeleteShareResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Share deleted successfully
+
+    SharedAssetsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Shared assets fetched successfully
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "share-uuid"
+              asset_id:
+                type: string
+                format: uuid
+                example: "asset-uuid"
+              shared_by:
+                type: string
+                format: uuid
+                example: "sharer-uuid"
+              share_type:
+                type: string
+                example: "PUBLIC"
+              share_token:
+                type: string
+                example: "unique-share-token"
+              is_active:
+                type: boolean
+                example: true
+              created_at:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              asset:
+                type: object
+                properties:
+                  asset_id:
+                    type: string
+                    format: uuid
+                    example: "asset-uuid"
+                  filename:
+                    type: string
+                    example: "document.pdf"
+                  mime_type:
+                    type: string
+                    example: "application/pdf"
+                  storage_path:
+                    type: string
+                    example: "assets/uuid/document.pdf"
+                  size_bytes:
+                    type: integer
+                    example: 1048576
+                  status:
+                    type: string
+                    example: "COMPLETED"
+                  uploader_id:
+                    type: string
+                    format: uuid
+                    example: "uploader-uuid"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+                  updated_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+                  metadata:
+                    type: array
+                    items:
+                      type: object
+                  uploader:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "uploader-uuid"
+                      full_name:
+                        type: string
+                        example: "Jane Doe"
+                      email:
+                        type: string
+                        example: "jane@example.com"
+                      role:
+                        type: string
+                        example: "USER"
+              sharedBy:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "sharer-uuid"
+                  full_name:
+                    type: string
+                    example: "John Doe"
+                  email:
+                    type: string
+                    example: "john@example.com"
+              user:
+                type: object
+                nullable: true
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "restricted-user-uuid"
+                  full_name:
+                    type: string
+                    example: "Jane Smith"
+                  email:
+                    type: string
+                    example: "jane@example.com"
+
+    PublicAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset accessed successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid"
+            filename:
+              type: string
+              example: "document.pdf"
+            mime_type:
+              type: string
+              example: "application/pdf"
+            size_bytes:
+              type: integer
+              example: 1048576
+            uploader:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "uploader-uuid"
+                full_name:
+                  type: string
+                  example: "Jane Doe"
+                email:
+                  type: string
+                  example: "jane@example.com"
+                role:
+                  type: string
+                  example: "USER"
+            shared_by:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+            share_type:
+              type: string
+              example: "PUBLIC"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            paths:
+              type: object
+              properties:
+                original:
+                  type: string
+                  example: "https://s3.amazonaws.com/presigned-url"
+                "480p":
+                  type: string
+                  example: "https://s3.amazonaws.com/480p-url"
+                "720p":
+                  type: string
+                  example: "https://s3.amazonaws.com/720p-url"
+                thumbnail:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-url"
+                thumbnail_1:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-1-url"
+                thumbnail_2:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-2-url"
+              description: "Asset URLs including original, variants, and thumbnails"
+
+    RestrictedAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset accessed successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid"
+            filename:
+              type: string
+              example: "document.pdf"
+            mime_type:
+              type: string
+              example: "application/pdf"
+            size_bytes:
+              type: integer
+              example: 1048576
+            uploader:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "uploader-uuid"
+                full_name:
+                  type: string
+                  example: "Jane Doe"
+                email:
+                  type: string
+                  example: "jane@example.com"
+                role:
+                  type: string
+                  example: "USER"
+            shared_by:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+            share_type:
+              type: string
+              example: "RESTRICTED"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            paths:
+              type: object
+              properties:
+                original:
+                  type: string
+                  example: "https://s3.amazonaws.com/presigned-url"
+                "480p":
+                  type: string
+                  example: "https://s3.amazonaws.com/480p-url"
+                "720p":
+                  type: string
+                  example: "https://s3.amazonaws.com/720p-url"
+                thumbnail:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-url"
+                thumbnail_1:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-1-url"
+                thumbnail_2:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-2-url"
+              description: "Asset URLs including original, variants, and thumbnails"
+
+    ShareInfoResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Share info fetched successfully
+        data:
+          type: object
+          properties:
+            share_id:
+              type: string
+              format: uuid
+              example: "share-uuid"
+            share_token:
+              type: string
+              example: "unique-share-token"
+            share_type:
+              type: string
+              example: "PUBLIC"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            asset:
+              type: object
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                  example: "asset-uuid"
+                filename:
+                  type: string
+                  example: "document.pdf"
+                mime_type:
+                  type: string
+                  example: "application/pdf"
+                size_bytes:
+                  type: integer
+                  example: 1048576
+                created_at:
+                  type: string
+                  format: date-time
+                  example: "2024-01-01T00:00:00Z"
+            shared_by:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+
+    AssetVisibilityResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset visibility fetched successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid-here"
+            visibility_status:
+              type: string
+              enum: [PRIVATE, PUBLIC, RESTRICTED]
+              example: "RESTRICTED"

@@ -1,0 +1,256 @@
+paths:
+  /api/assets/share:
+    post:
+      summary: Create a new share for an asset
+      description: Create a share for an asset - PUBLIC (anyone with link) or RESTRICTED (specific users)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/sharing.yaml#/components/schemas/CreateShareRequest'
+      responses:
+        "201":
+          description: Share created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/CreateShareResponse'
+        "400":
+          description: Validation error, asset already shared, or user_ids required for RESTRICTED
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Asset not found or no permission to share
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/share/{share_id}:
+    delete:
+      summary: Delete a share
+      description: Delete a share (only the creator can delete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the share to delete
+          example: "share-uuid-here"
+      responses:
+        "200":
+          description: Share deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/DeleteShareResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Share not found or no permission to delete
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/shared:
+    get:
+      summary: Get shared assets for current user
+      description: Retrieve all PUBLIC shared assets and RESTRICTED assets shared with the current user
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Shared assets fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/SharedAssetsResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/share/info/{share_token}:
+    get:
+      summary: Get share information by share token
+      description: Get information about a share without accessing the asset
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Share token
+          example: "unique-share-token"
+      responses:
+        "200":
+          description: Share info fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/ShareInfoResponse'
+        "404":
+          description: Share not found or inactive
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/restricted/{asset_id}:
+    get:
+      summary: Access restricted asset by asset ID
+      description: Access a restricted asset with authentication and access control (owner, admin/manager, or users with shared access)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset accessed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/RestrictedAssetResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "403":
+          description: Forbidden - no access to this asset
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/share/visibility/{asset_id}:
+    get:
+      summary: Get asset visibility information (public API)
+      description: Check if an asset is shared and what the share type is (no authentication required)
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset visibility fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/AssetVisibilityResponse'
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+
+  /api/assets/public/{asset_id}:
+    get:
+      summary: Access public shared asset by asset ID
+      description: Access a publicly shared asset without authentication using the asset ID (only PUBLIC shares allowed)
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset accessed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/sharing.yaml#/components/schemas/PublicAssetResponse'
+        "404":
+          description: Asset not found or not publicly shared
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'

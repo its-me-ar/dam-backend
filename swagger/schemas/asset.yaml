@@ -1,0 +1,302 @@
+components:
+  schemas:
+    PresignUploadRequest:
+      type: object
+      required:
+        - filename
+        - mime_type
+        - size_bytes
+      properties:
+        filename:
+          type: string
+          description: Name of the file to upload
+          example: dam.pdf
+        mime_type:
+          type: string
+          description: MIME type or shorthand file type
+          example: application/pdf
+        size_bytes:
+          type: integer
+          description: Size of the file in bytes
+          example: 1048576
+
+    PresignUploadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Presigned upload URL generated
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+              description: Presigned S3 upload URL
+              example: https://bucket-name.s3.amazonaws.com/assets/uuid/document.pdf?X-Amz-Algorithm=...
+            asset_id:
+              type: string
+              description: ID of the created or reused asset
+              example: "d3f6b8a1-4b90-4a38-bc9e-88e1e176f1a2"
+
+    CompleteAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset status updated to COMPLETED
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              example: "uuid_here"
+            status:
+              type: string
+              example: COMPLETED
+            storage_path:
+              type: string
+              example: "uploads/file.pdf"
+            uploader_id:
+              type: string
+              example: "uuid_of_uploader"
+
+    AssetListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: User assets fetched successfully
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              asset_id:
+                type: string
+                format: uuid
+                example: "uuid_here"
+              filename:
+                type: string
+                example: "file.pdf"
+              mime_type:
+                type: string
+                example: "application/pdf"
+              storage_path:
+                type: string
+                example: "uploads/file.pdf"
+              size_bytes:
+                type: integer
+                example: 1048576
+              status:
+                type: string
+                example: COMPLETED
+              uploader_id:
+                type: string
+                format: uuid
+                example: "uuid_of_uploader"
+              created_at:
+                type: string
+                format: date-time
+                example: "2023-08-25T12:34:56Z"
+              updated_at:
+                type: string
+                format: date-time
+                example: "2023-08-25T12:45:00Z"
+              metadata:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    metadata_id:
+                      type: string
+                      format: uuid
+                      example: "uuid_metadata"
+                    key:
+                      type: string
+                      example: "video_variants"
+                    value:
+                      type: object
+                      example: 
+                        original: 
+                          path: "uploads/original.mp4"
+                          width: 1920
+                          height: 1080
+                          size: 1048576
+                    created_at:
+                      type: string
+                      format: date-time
+                      example: "2023-08-25T12:34:56Z"
+                    updated_at:
+                      type: string
+                      format: date-time
+                      example: "2023-08-25T12:45:00Z"
+              shared_permission:
+                type: string
+                example: "VIEW"
+                description: Permission level if this is a shared asset
+              shared_by:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "sharer-uuid"
+                description: Information about who shared this asset
+
+    AssetDetailResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset paths fetched successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid"
+            filename:
+              type: string
+              example: "document.pdf"
+            mime_type:
+              type: string
+              example: "application/pdf"
+            uploader:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "uploader-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+                role:
+                  type: string
+                  example: "USER"
+            paths:
+              type: object
+              properties:
+                original:
+                  type: string
+                  example: "https://s3.amazonaws.com/presigned-url"
+                "480p":
+                  type: string
+                  example: "https://s3.amazonaws.com/480p-url"
+                "720p":
+                  type: string
+                  example: "https://s3.amazonaws.com/720p-url"
+
+    ProcessingJobsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: User processing jobs fetched successfully
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "job-uuid"
+              asset_id:
+                type: string
+                format: uuid
+                example: "asset-uuid"
+              job_id:
+                type: string
+                example: "bull-job-id"
+              worker_name:
+                type: string
+                example: "video-processing"
+              event_name:
+                type: string
+                example: "enqueued"
+              status:
+                type: string
+                enum: [PENDING, ACTIVE, COMPLETED, FAILED]
+                example: "PENDING"
+              created_at:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              updated_at:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              asset:
+                type: object
+                properties:
+                  asset_id:
+                    type: string
+                    format: uuid
+                    example: "asset-uuid"
+                  filename:
+                    type: string
+                    example: "video.mp4"
+                  mime_type:
+                    type: string
+                    example: "video/mp4"
+                  uploader_id:
+                    type: string
+                    format: uuid
+                    example: "uploader-uuid"
+                  status:
+                    type: string
+                    example: "COMPLETED"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+
+    AssetMetricsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset metrics fetched successfully
+        data:
+          type: object
+          properties:
+            totalAssets:
+              type: integer
+              example: 150
+              description: Total number of assets
+            addedThisWeek:
+              type: integer
+              example: 25
+              description: Assets added in the last 7 days
+            storageUsedGB:
+              type: number
+              format: float
+              example: 2.5
+              description: Total storage used in GB
+            newUploadsToday:
+              type: integer
+              example: 5
+              description: New uploads today

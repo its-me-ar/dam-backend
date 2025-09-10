@@ -38,4 +38,6 @@ docker/*.log
 # Test coverage
 coverage/
 
+# Generated files
 generated/prisma
+swagger.yaml

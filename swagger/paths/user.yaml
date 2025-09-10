@@ -1,0 +1,26 @@
+paths:
+  /api/users:
+    get:
+      summary: Get all users
+      description: Retrieve all users with their basic information (id, name, email, role)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Users fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/user.yaml#/components/schemas/UsersResponse'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'

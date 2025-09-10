@@ -5,6 +5,7 @@ import {
 	InvitationStatus,
 } from "../../generated/prisma";
 import jwt from "jsonwebtoken";
+import logger from "../config/logger";
 const prisma = new PrismaClient();
 
 export const inviteUser = async (req: Request, res: Response) => {
@@ -59,7 +60,7 @@ export const inviteUser = async (req: Request, res: Response) => {
 			"Invitation sent successfully",
 		);
 	} catch (err) {
-		console.error(err);
+		logger.error("inviteController error:", err);
 		return res.error("Server error", 500);
 	}
 };
@@ -89,7 +90,7 @@ export const getAllInvitations = async (req: Request, res: Response) => {
 
 		return res.success(invitations, "Invitations fetched successfully");
 	} catch (err) {
-		console.error(err);
+		logger.error("inviteController error:", err);
 		return res.error("Server error", 500);
 	}
 };
@@ -155,7 +156,7 @@ export const reInviteUser = async (req: Request, res: Response) => {
 			"Invitation resent successfully",
 		);
 	} catch (err) {
-		console.error(err);
+		logger.error("inviteController error:", err);
 		return res.error("Server error", 500);
 	}
 };

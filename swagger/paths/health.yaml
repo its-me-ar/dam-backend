@@ -1,0 +1,12 @@
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Returns service status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/common.yaml#/components/schemas/HealthResponse'

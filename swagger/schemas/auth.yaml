@@ -1,0 +1,91 @@
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@dam.com"
+        password:
+          type: string
+          format: password
+          example: "Admin@123"
+
+    LoginSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Login successful"
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: "jwt_token_here"
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "uuid_here"
+                full_name:
+                  type: string
+                  example: "Admin"
+                email:
+                  type: string
+                  example: "admin@dam.com"
+                role:
+                  type: string
+                  example: "ADMIN"
+
+    RegisterInviteRequest:
+      type: object
+      required:
+        - email
+        - password
+        - invitationId
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "User@123"
+        invitationId:
+          type: string
+          example: "uuid_of_invitation"
+
+    RegisterInviteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Registration successful"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "uuid_here"
+            full_name:
+              type: string
+              example: "User Name"
+            email:
+              type: string
+              example: "user@example.com"
+            role:
+              type: string
+              example: "USER"

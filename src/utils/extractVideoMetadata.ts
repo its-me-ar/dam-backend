@@ -14,9 +14,13 @@ ffmpeg.setFfprobePath(ffprobeStatic.path);
 export function extractVideoMetadata(filePath: string): Promise<VideoMetadata> {
 	return new Promise((resolve, reject) => {
 		ffmpeg.ffprobe(filePath, (err: Error | null, metadata: FfprobeData) => {
-			if (err) {return reject(err);}
+			if (err) {
+				return reject(err);
+			}
 
-			if (!metadata.format) {return reject(new Error("No format info found"));}
+			if (!metadata.format) {
+				return reject(new Error("No format info found"));
+			}
 
 			const size = parseInt(String(metadata.format.size ?? "0"), 10);
 			const videoStream = metadata.streams.find(s => s.codec_type === "video");

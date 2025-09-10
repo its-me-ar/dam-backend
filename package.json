@@ -9,7 +9,7 @@
 		"build": "npx tsc -p tsconfig.build.json && node ./build.js",
 		"build:start": "nodemon ./dist/index.js",
 		"lint": "eslint 'src/**/*.{ts,js}' --fix",
-		"prettier": "prettier --config ./.prettierrc.json --write src/**/*",
+		"prettier": "prettier --config ./.prettierrc --write src/**/*",
 		"test": "jest",
 		"test:coverage": "jest --coverage",
 		"test:watch": "jest --watch",
@@ -26,8 +26,8 @@
 		"apply:bucket-policy": "ts-node ./scripts/applyBucketPolicy.ts",
 		"clean": "rm -rf dist",
 		"type-check": "tsc --noEmit",
-		"format": "prettier --config ./.prettierrc.json --write src/**/*",
-		"format:check": "prettier --config ./.prettierrc.json --check src/**/*"
+		"format": "prettier --config ./.prettierrc --write src/**/*",
+		"format:check": "prettier --config ./.prettierrc --check src/**/*"
 	},
 	"lint-staged": {
 		"src/**/*.{ts,js}": [

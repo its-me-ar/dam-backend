@@ -94,7 +94,9 @@ const videoThumbnailWorker = new Worker<ThumbnailJobData>(
 			);
 		} catch (err: unknown) {
 			let message = "Unknown error";
-			if (err instanceof Error) {message = err.message;}
+			if (err instanceof Error) {
+				message = err.message;
+			}
 
 			logger.error(
 				`[ThumbnailWorker] ❌ Failed for asset_id=${asset_id}: ${message}`,
@@ -106,25 +108,40 @@ const videoThumbnailWorker = new Worker<ThumbnailJobData>(
 );
 
 videoThumbnailWorker.on("active", job =>
-	prisma.transcodingJob.update({
-		where: { job_id: String(job.id) },
-		data: { status: JobStatus.ACTIVE, worker_name: "video-thumbnail", event_name: "active" },
-	}).catch(() => {}),
+	prisma.transcodingJob
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
+				status: JobStatus.ACTIVE,
+				worker_name: "video-thumbnail",
+				event_name: "active",
+			},
+		})
+		.catch(() => {}),
 );
 videoThumbnailWorker.on("completed", job => {
 	prisma.transcodingJob
 		.update({
 			where: { job_id: String(job.id) },
-			data: { status: JobStatus.COMPLETED, worker_name: "video-thumbnail", event_name: "completed" },
+			data: {
+				status: JobStatus.COMPLETED,
+				worker_name: "video-thumbnail",
+				event_name: "completed",
+			},
 		})
 		.catch(() => {});
-
 });
 videoThumbnailWorker.on("failed", (job, _err) =>
-	prisma.transcodingJob.update({
-		where: { job_id: String(job?.id) },
-		data: { status: JobStatus.FAILED, worker_name: "video-thumbnail", event_name: "failed" },
-	}).catch(() => {}),
+	prisma.transcodingJob
+		.update({
+			where: { job_id: String(job?.id) },
+			data: {
+				status: JobStatus.FAILED,
+				worker_name: "video-thumbnail",
+				event_name: "failed",
+			},
+		})
+		.catch(() => {}),
 );
 
 export default videoThumbnailWorker;

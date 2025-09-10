@@ -228,16 +228,16 @@ export const getUserAssets = async (req: Request, res: Response) => {
 			include: {
 				metadata: true,
 				shares: {
-					include:{
-						user:{
-							select:{
-								id:true,
-								full_name:true,
-								email:true,
-								role:true,
-							}
-						}
-					}
+					include: {
+						user: {
+							select: {
+								id: true,
+								full_name: true,
+								email: true,
+								role: true,
+							},
+						},
+					},
 				},
 				uploader: {
 					select: {
@@ -247,7 +247,6 @@ export const getUserAssets = async (req: Request, res: Response) => {
 						role: true,
 					},
 				},
-			
 			},
 			orderBy: { created_at: "desc" },
 		});
@@ -314,7 +313,7 @@ export const getAssetById = async (req: Request, res: Response) => {
 					is_active: true,
 					OR: [
 						{ share_type: "PUBLIC" },
-						{ share_type: "RESTRICTED", user_id: userId }
+						{ share_type: "RESTRICTED", user_id: userId },
 					],
 				},
 			});
@@ -400,11 +399,17 @@ export const getProcessingJobs = async (req: Request, res: Response) => {
 		const isPrivileged = userRole === "ADMIN" || userRole === "MANAGER";
 
 		const where = isPrivileged
-			? { status: { in: [JobStatus.PENDING, JobStatus.ACTIVE, JobStatus.FAILED] } }
+			? {
+					status: {
+						in: [JobStatus.PENDING, JobStatus.ACTIVE, JobStatus.FAILED],
+					},
+				}
 			: {
-				status: { in: [JobStatus.PENDING, JobStatus.ACTIVE, JobStatus.FAILED] },
-				asset: { uploader_id: userId },
-			};
+					status: {
+						in: [JobStatus.PENDING, JobStatus.ACTIVE, JobStatus.FAILED],
+					},
+					asset: { uploader_id: userId },
+				};
 
 		const jobs = await prisma.transcodingJob.findMany({
 			where,
@@ -462,22 +467,33 @@ export const getAssetMetrics = async (req: Request, res: Response) => {
 		const baseWhere = isPrivileged ? {} : { uploader_id: userId };
 
 		const now = new Date();
-		const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const startOfToday = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			now.getDate(),
+		);
 		const sevenDaysAgo = new Date(now);
 		sevenDaysAgo.setDate(now.getDate() - 7);
 
-		const [totalAssets, addedThisWeek, newToday, storageAgg] = await Promise.all([
-			prisma.asset.count({ where: baseWhere }),
-			prisma.asset.count({ where: { ...baseWhere, created_at: { gte: sevenDaysAgo } } }),
-			prisma.asset.count({ where: { ...baseWhere, created_at: { gte: startOfToday } } }),
-			prisma.asset.aggregate({
-				where: baseWhere,
-				_sum: { size_bytes: true },
-			}),
-		]);
+		const [totalAssets, addedThisWeek, newToday, storageAgg] =
+			await Promise.all([
+				prisma.asset.count({ where: baseWhere }),
+				prisma.asset.count({
+					where: { ...baseWhere, created_at: { gte: sevenDaysAgo } },
+				}),
+				prisma.asset.count({
+					where: { ...baseWhere, created_at: { gte: startOfToday } },
+				}),
+				prisma.asset.aggregate({
+					where: baseWhere,
+					_sum: { size_bytes: true },
+				}),
+			]);
 
 		const totalBytes = storageAgg._sum.size_bytes || 0;
-		const storageUsedGB = Number((totalBytes / (1024 * 1024 * 1024)).toFixed(3));
+		const storageUsedGB = Number(
+			(totalBytes / (1024 * 1024 * 1024)).toFixed(3),
+		);
 
 		return res.status(200).json({
 			status: "success",

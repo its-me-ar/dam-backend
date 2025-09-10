@@ -1,10 +1,7 @@
 import { Router } from "express";
 import { validate } from "../middlewares/validate";
 import { filenameQuerySchema } from "src/schemas/assetsSchema";
-import {
-	createShareSchema,
-	shareIdSchema,
-} from "src/schemas/sharingSchema";
+import { createShareSchema, shareIdSchema } from "src/schemas/sharingSchema";
 import {
 	getPresignedUploadUrl,
 	completeAssetUpload,
@@ -47,7 +44,12 @@ router.get("/metrics", authenticate, getAssetMetrics);
 router.post("/share", authenticate, validate(createShareSchema), createShare);
 
 // Delete a share
-router.delete("/share/:share_id", authenticate, validate(shareIdSchema), deleteShare);
+router.delete(
+	"/share/:share_id",
+	authenticate,
+	validate(shareIdSchema),
+	deleteShare,
+);
 
 // Get visibility of an asset (public API)
 router.get("/share/visibility/:asset_id", getAssetVisibility);

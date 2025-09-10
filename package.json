@@ -5,23 +5,51 @@
 	"scripts": {
 		"prepare": "husky install",
 		"dev": "nodemon -r tsconfig-paths/register ./src/server.ts",
-		"lint": "eslint 'src/**/*.{ts,js}' --fix",
+		"start": "node dist/server.js",
 		"build": "npx tsc -p tsconfig.build.json && node ./build.js",
 		"build:start": "nodemon ./dist/index.js",
+		"lint": "eslint 'src/**/*.{ts,js}' --fix",
 		"prettier": "prettier --config ./.prettierrc.json --write src/**/*",
+		"test": "jest",
+		"test:coverage": "jest --coverage",
+		"test:watch": "jest --watch",
 		"local": "docker-compose up -d && npm run dev",
 		"prod": "docker build -f docker/Dockerfile.prod -t dam-backend:latest .",
 		"prisma:migrate": "npx prisma migrate dev --name",
 		"prisma:generate": "npx prisma generate",
 		"prisma:studio": "npx prisma studio",
+		"prisma:deploy": "npx prisma migrate deploy",
+		"prisma:seed": "npx prisma db seed",
 		"create:admin": "ts-node ./scripts/createAdmin.ts",
+		"create-admin": "ts-node ./scripts/createAdmin.ts",
 		"worker:dev": "nodemon --exec ts-node -r tsconfig-paths/register ./src/workers/index.ts",
-		"apply:bucket-policy": "ts-node ./scripts/applyBucketPolicy.ts"
+		"apply:bucket-policy": "ts-node ./scripts/applyBucketPolicy.ts",
+		"clean": "rm -rf dist",
+		"type-check": "tsc --noEmit",
+		"format": "prettier --config ./.prettierrc.json --write src/**/*",
+		"format:check": "prettier --config ./.prettierrc.json --check src/**/*"
 	},
 	"lint-staged": {
 		"src/**/*.{ts,js}": [
 			"eslint --fix"
 		]
+	},
+	"jest": {
+		"preset": "ts-jest",
+		"testEnvironment": "node",
+		"roots": ["<rootDir>/src"],
+		"testMatch": ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+		"transform": {
+			"^.+\\.ts$": "ts-jest"
+		},
+		"collectCoverageFrom": [
+			"src/**/*.ts",
+			"!src/**/*.d.ts",
+			"!src/**/__tests__/**",
+			"!src/**/index.ts"
+		],
+		"coverageDirectory": "coverage",
+		"coverageReporters": ["text", "lcov", "html"]
 	},
 	"keywords": [],
 	"author": "",
@@ -61,10 +89,12 @@
 		"@types/express": "^5.0.3",
 		"@types/ffprobe-static": "^2.0.3",
 		"@types/fluent-ffmpeg": "^2.1.27",
+		"@types/jest": "^29.5.12",
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^24.3.0",
 		"@types/pg": "^8.15.5",
 		"@types/swagger-ui-express": "^4.1.8",
+		"@types/supertest": "^6.0.2",
 		"@types/yamljs": "^0.2.34",
 		"@typescript-eslint/eslint-plugin": "^8.41.0",
 		"@typescript-eslint/parser": "^8.41.0",
@@ -72,9 +102,14 @@
 		"globals": "^16.3.0",
 		"husky": "^9.1.7",
 		"i": "^0.3.7",
+		"jest": "^29.7.0",
 		"jiti": "^2.5.1",
+		"nodemon": "^3.1.0",
 		"npm": "^11.6.0",
+		"prettier": "^3.3.3",
 		"prisma": "^6.15.0",
+		"supertest": "^7.0.0",
+		"ts-jest": "^29.1.2",
 		"ts-node-dev": "^2.0.0",
 		"typescript": "^5.9.2",
 		"typescript-eslint": "^8.41.0"

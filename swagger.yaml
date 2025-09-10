@@ -153,6 +153,44 @@ components:
               type: string
               example: "USER"
 
+    InvitationsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Invitations fetched successfully"
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "invitation-uuid-here"
+              email:
+                type: string
+                format: email
+                example: "user@example.com"
+              status:
+                type: string
+                example: "PENDING"
+              invitedBy:
+                type: string
+                format: uuid
+                example: "admin-uuid-here"
+              createdAt:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              updatedAt:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+
     ErrorResponse:
       type: object
       properties:
@@ -162,6 +200,486 @@ components:
         message:
           type: string
           example: Validation error
+
+    # User Schemas
+    UsersResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Users fetched successfully
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "user-uuid-here"
+              full_name:
+                type: string
+                example: "John Doe"
+              email:
+                type: string
+                example: "john@example.com"
+              role:
+                type: string
+                example: "USER"
+              created_at:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00.000Z"
+
+    # Simple Sharing Schemas
+    CreateShareRequest:
+      type: object
+      required:
+        - asset_id
+        - share_type
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          description: ID of the asset to share
+          example: "d3f6b8a1-4b90-4a38-bc9e-88e1e176f1a2"
+        share_type:
+          type: string
+          enum: [PUBLIC, RESTRICTED]
+          description: Type of sharing - PUBLIC (anyone with link) or RESTRICTED (specific users)
+          example: "RESTRICTED"
+        user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of user IDs for RESTRICTED shares (required when share_type is RESTRICTED)
+          example: ["user-uuid-1", "user-uuid-2", "user-uuid-3"]
+
+    CreateShareResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset shared successfully
+        data:
+          type: object
+          properties:
+            shares:
+              type: array
+              items:
+                type: object
+                properties:
+                  share_id:
+                    type: string
+                    format: uuid
+                    example: "share-uuid-here"
+                  share_token:
+                    type: string
+                    example: "unique-share-token"
+                  share_type:
+                    type: string
+                    example: "RESTRICTED"
+                  user_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    example: "user-uuid-here"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+            total_shares:
+              type: integer
+              example: 3
+
+    DeleteShareResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Share deleted successfully
+
+
+    SharedAssetsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Shared assets fetched successfully
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: "share-uuid"
+              asset_id:
+                type: string
+                format: uuid
+                example: "asset-uuid"
+              shared_by:
+                type: string
+                format: uuid
+                example: "sharer-uuid"
+              share_type:
+                type: string
+                example: "PUBLIC"
+              share_token:
+                type: string
+                example: "unique-share-token"
+              is_active:
+                type: boolean
+                example: true
+              created_at:
+                type: string
+                format: date-time
+                example: "2024-01-01T00:00:00Z"
+              asset:
+                type: object
+                properties:
+                  asset_id:
+                    type: string
+                    format: uuid
+                    example: "asset-uuid"
+                  filename:
+                    type: string
+                    example: "document.pdf"
+                  mime_type:
+                    type: string
+                    example: "application/pdf"
+                  storage_path:
+                    type: string
+                    example: "assets/uuid/document.pdf"
+                  size_bytes:
+                    type: integer
+                    example: 1048576
+                  status:
+                    type: string
+                    example: "COMPLETED"
+                  uploader_id:
+                    type: string
+                    format: uuid
+                    example: "uploader-uuid"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+                  updated_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+                  metadata:
+                    type: array
+                    items:
+                      type: object
+                  uploader:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "uploader-uuid"
+                      full_name:
+                        type: string
+                        example: "Jane Doe"
+                      email:
+                        type: string
+                        example: "jane@example.com"
+                      role:
+                        type: string
+                        example: "USER"
+              sharedBy:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "sharer-uuid"
+                  full_name:
+                    type: string
+                    example: "John Doe"
+                  email:
+                    type: string
+                    example: "john@example.com"
+              user:
+                type: object
+                nullable: true
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "restricted-user-uuid"
+                  full_name:
+                    type: string
+                    example: "Jane Smith"
+                  email:
+                    type: string
+                    example: "jane@example.com"
+
+    PublicAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset accessed successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid"
+            filename:
+              type: string
+              example: "document.pdf"
+            mime_type:
+              type: string
+              example: "application/pdf"
+            size_bytes:
+              type: integer
+              example: 1048576
+            uploader:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "uploader-uuid"
+                full_name:
+                  type: string
+                  example: "Jane Doe"
+                email:
+                  type: string
+                  example: "jane@example.com"
+                role:
+                  type: string
+                  example: "USER"
+            shared_by:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+            share_type:
+              type: string
+              example: "PUBLIC"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            paths:
+              type: object
+              properties:
+                original:
+                  type: string
+                  example: "https://s3.amazonaws.com/presigned-url"
+                "480p":
+                  type: string
+                  example: "https://s3.amazonaws.com/480p-url"
+                "720p":
+                  type: string
+                  example: "https://s3.amazonaws.com/720p-url"
+                thumbnail:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-url"
+                thumbnail_1:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-1-url"
+                thumbnail_2:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-2-url"
+              description: "Asset URLs including original, variants, and thumbnails"
+
+    RestrictedAssetResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset accessed successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid"
+            filename:
+              type: string
+              example: "document.pdf"
+            mime_type:
+              type: string
+              example: "application/pdf"
+            size_bytes:
+              type: integer
+              example: 1048576
+            uploader:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "uploader-uuid"
+                full_name:
+                  type: string
+                  example: "Jane Doe"
+                email:
+                  type: string
+                  example: "jane@example.com"
+                role:
+                  type: string
+                  example: "USER"
+            shared_by:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+            share_type:
+              type: string
+              example: "RESTRICTED"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            paths:
+              type: object
+              properties:
+                original:
+                  type: string
+                  example: "https://s3.amazonaws.com/presigned-url"
+                "480p":
+                  type: string
+                  example: "https://s3.amazonaws.com/480p-url"
+                "720p":
+                  type: string
+                  example: "https://s3.amazonaws.com/720p-url"
+                thumbnail:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-url"
+                thumbnail_1:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-1-url"
+                thumbnail_2:
+                  type: string
+                  example: "https://s3.amazonaws.com/thumbnail-2-url"
+              description: "Asset URLs including original, variants, and thumbnails"
+
+    ShareInfoResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Share info fetched successfully
+        data:
+          type: object
+          properties:
+            share_id:
+              type: string
+              format: uuid
+              example: "share-uuid"
+            share_token:
+              type: string
+              example: "unique-share-token"
+            share_type:
+              type: string
+              example: "PUBLIC"
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-01-01T00:00:00Z"
+            asset:
+              type: object
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                  example: "asset-uuid"
+                filename:
+                  type: string
+                  example: "document.pdf"
+                mime_type:
+                  type: string
+                  example: "application/pdf"
+                size_bytes:
+                  type: integer
+                  example: 1048576
+                created_at:
+                  type: string
+                  format: date-time
+                  example: "2024-01-01T00:00:00Z"
+            shared_by:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "sharer-uuid"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+
+    AssetVisibilityResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Asset visibility fetched successfully
+        data:
+          type: object
+          properties:
+            asset_id:
+              type: string
+              format: uuid
+              example: "asset-uuid-here"
+            visibility_status:
+              type: string
+              enum: [PRIVATE, PUBLIC, RESTRICTED]
+              example: "RESTRICTED"
 
     PresignUploadRequest:
       type: object
@@ -309,6 +827,89 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Get all invitations
+      description: Retrieve all invitations (ADMIN/MANAGER only)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Invitations fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationsListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/invitations/{id}/reinvite:
+    put:
+      summary: Resend invitation
+      description: Resend an invitation email (ADMIN/MANAGER only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Invitation ID
+          example: "invitation-uuid-here"
+      responses:
+        "200":
+          description: Invitation resent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/register:
     post:
@@ -340,7 +941,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /api/assets/upload/presign:
+
+  /api/assets/uploads/presign:
     post:
       summary: Generate a presigned upload URL
       description: Returns a presigned S3 URL for uploading a file. Creates an asset record if it doesn't already exist.
@@ -378,7 +980,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /api/assets/upload/complete:
+  /api/assets/uploads/complete:
     post:
       summary: Complete asset upload
       description: Mark an uploaded asset as COMPLETED
@@ -427,15 +1029,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /api/assets:
     get:
       summary: List all assets for authenticated user
-      description: Retrieve all assets uploaded by the authenticated user, including metadata.
+      description: Retrieve all assets uploaded by the authenticated user, including shared assets and metadata.
       security:
         - BearerAuth: []
       responses:
         "200":
-          description: List of user assets including metadata
+          description: List of user assets including metadata and shared assets
           content:
             application/json:
               schema:
@@ -511,6 +1114,18 @@ paths:
                                 type: string
                                 format: date-time
                                 example: "2023-08-25T12:45:00Z"
+                        shared_permission:
+                          type: string
+                          example: "VIEW"
+                          description: Permission level if this is a shared asset
+                        shared_by:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: "sharer-uuid"
+                          description: Information about who shared this asset
         "401":
           description: Unauthorized
           content:
@@ -537,3 +1152,569 @@ paths:
                   message:
                     type: string
                     example: Failed to fetch user assets
+
+  /api/assets/jobs:
+    get:
+      summary: Get processing jobs
+      description: Retrieve processing jobs (PENDING/ACTIVE/FAILED) for the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Processing jobs fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User processing jobs fetched successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: "job-uuid"
+                        asset_id:
+                          type: string
+                          format: uuid
+                          example: "asset-uuid"
+                        job_id:
+                          type: string
+                          example: "bull-job-id"
+                        worker_name:
+                          type: string
+                          example: "video-processing"
+                        event_name:
+                          type: string
+                          example: "enqueued"
+                        status:
+                          type: string
+                          enum: [PENDING, ACTIVE, COMPLETED, FAILED]
+                          example: "PENDING"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2024-01-01T00:00:00Z"
+                        updated_at:
+                          type: string
+                          format: date-time
+                          example: "2024-01-01T00:00:00Z"
+                        asset:
+                          type: object
+                          properties:
+                            asset_id:
+                              type: string
+                              format: uuid
+                              example: "asset-uuid"
+                            filename:
+                              type: string
+                              example: "video.mp4"
+                            mime_type:
+                              type: string
+                              example: "video/mp4"
+                            uploader_id:
+                              type: string
+                              format: uuid
+                              example: "uploader-uuid"
+                            status:
+                              type: string
+                              example: "COMPLETED"
+                            created_at:
+                              type: string
+                              format: date-time
+                              example: "2024-01-01T00:00:00Z"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/metrics:
+    get:
+      summary: Get asset metrics
+      description: Retrieve asset metrics including total assets, storage used, and recent uploads
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Asset metrics fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Asset metrics fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      totalAssets:
+                        type: integer
+                        example: 150
+                        description: Total number of assets
+                      addedThisWeek:
+                        type: integer
+                        example: 25
+                        description: Assets added in the last 7 days
+                      storageUsedGB:
+                        type: number
+                        format: float
+                        example: 2.5
+                        description: Total storage used in GB
+                      newUploadsToday:
+                        type: integer
+                        example: 5
+                        description: New uploads today
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/{id}:
+    get:
+      summary: Get asset by ID
+      description: Retrieve a specific asset by ID with presigned download URLs (owner, admin/manager, or users with shared access)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset details with download URLs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Asset paths fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      asset_id:
+                        type: string
+                        format: uuid
+                        example: "asset-uuid"
+                      filename:
+                        type: string
+                        example: "document.pdf"
+                      mime_type:
+                        type: string
+                        example: "application/pdf"
+                      uploader:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            example: "uploader-uuid"
+                          full_name:
+                            type: string
+                            example: "John Doe"
+                          email:
+                            type: string
+                            example: "john@example.com"
+                          role:
+                            type: string
+                            example: "USER"
+                      paths:
+                        type: object
+                        properties:
+                          original:
+                            type: string
+                            example: "https://s3.amazonaws.com/presigned-url"
+                          "480p":
+                            type: string
+                            example: "https://s3.amazonaws.com/480p-url"
+                          "720p":
+                            type: string
+                            example: "https://s3.amazonaws.com/720p-url"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - not owner, admin/manager, or shared with user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ===== USER ENDPOINTS =====
+  
+  /api/users:
+    get:
+      summary: Get all users
+      description: Retrieve all users with their basic information (id, name, email, role)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Users fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ===== SHARING ENDPOINTS =====
+  
+  /api/assets/share:
+    post:
+      summary: Create a new share for an asset
+      description: Create a share for an asset - PUBLIC (anyone with link) or RESTRICTED (specific users)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShareRequest"
+      responses:
+        "201":
+          description: Share created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateShareResponse"
+        "400":
+          description: Validation error, asset already shared, or user_ids required for RESTRICTED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Asset not found or no permission to share
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/share/{share_id}:
+    delete:
+      summary: Delete a share
+      description: Delete a share (only the creator can delete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the share to delete
+          example: "share-uuid-here"
+      responses:
+        "200":
+          description: Share deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteShareResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Share not found or no permission to delete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/uploads/share/asset/{asset_id}:
+    get:
+      summary: Get all shares for a specific asset
+      description: Retrieve all shares for an asset (only the asset owner can view)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the asset
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset shares fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetSharesResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Asset not found or no permission to view shares
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/shared:
+    get:
+      summary: Get shared assets for current user
+      description: Retrieve all PUBLIC shared assets and RESTRICTED assets shared with the current user
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Shared assets fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedAssetsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/share/info/{share_token}:
+    get:
+      summary: Get share information by share token
+      description: Get information about a share without accessing the asset
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Share token
+          example: "unique-share-token"
+      responses:
+        "200":
+          description: Share info fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareInfoResponse"
+        "404":
+          description: Share not found or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/restricted/{asset_id}:
+    get:
+      summary: Access restricted asset by asset ID
+      description: Access a restricted asset with authentication and access control (owner, admin/manager, or users with shared access)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset accessed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestrictedAssetResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - no access to this asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/share/visibility/{asset_id}:
+    get:
+      summary: Get asset visibility information (public API)
+      description: Check if an asset is shared and what the share type is (no authentication required)
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset visibility fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetVisibilityResponse"
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/assets/public/{asset_id}:
+    get:
+      summary: Access public shared asset by asset ID
+      description: Access a publicly shared asset without authentication using the asset ID (only PUBLIC shares allowed)
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Asset ID
+          example: "asset-uuid-here"
+      responses:
+        "200":
+          description: Asset accessed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicAssetResponse"
+        "404":
+          description: Asset not found or not publicly shared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

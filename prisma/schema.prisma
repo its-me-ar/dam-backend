@@ -22,6 +22,10 @@ model User {
 
   // Relation to assets
   assets Asset[] @relation("UserAssets")
+  // Relation to shared assets
+  sharedAssets AssetShare[]
+  // Relation to restricted shares
+  restrictedShares AssetShare[] @relation("RestrictedShares")
 }
 
 model Invitation {
@@ -52,7 +56,8 @@ model Asset {
   metadata     AssetMetadata[]
   // Relation to transcoding jobs
   transcodingJobs TranscodingJob[]
-  
+  // Relation to sharing
+  shares       AssetShare[]
 }
 
 model AssetMetadata {
@@ -108,4 +113,24 @@ enum JobStatus {
   ACTIVE
   COMPLETED
   FAILED
+}
+
+model AssetShare {
+  id          String   @id @default(uuid())
+  asset_id    String
+  asset       Asset    @relation(fields: [asset_id], references: [asset_id])
+  shared_by   String
+  sharedBy    User     @relation(fields: [shared_by], references: [id])
+  share_type  String   // 'PUBLIC' or 'RESTRICTED'
+  share_token String   @unique
+  user_id     String?  // For RESTRICTED shares - which user can access
+  user        User?    @relation("RestrictedShares", fields: [user_id], references: [id])
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  @@index([asset_id])
+  @@index([shared_by])
+  @@index([share_token])
+  @@index([user_id])
 }

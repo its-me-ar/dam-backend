@@ -227,6 +227,18 @@ export const getUserAssets = async (req: Request, res: Response) => {
 				: { uploader_id: userId, status: AssetStatus.COMPLETED },
 			include: {
 				metadata: true,
+				shares: {
+					include:{
+						user:{
+							select:{
+								id:true,
+								full_name:true,
+								email:true,
+								role:true,
+							}
+						}
+					}
+				},
 				uploader: {
 					select: {
 						id: true,
@@ -235,6 +247,7 @@ export const getUserAssets = async (req: Request, res: Response) => {
 						role: true,
 					},
 				},
+			
 			},
 			orderBy: { created_at: "desc" },
 		});
@@ -288,9 +301,27 @@ export const getAssetById = async (req: Request, res: Response) => {
 				.json({ status: "error", message: "Asset not found" });
 		}
 
-		// Only uploader OR Admin/Manager can access
+		// Check access permissions
 		const isPrivileged = userRole === "ADMIN" || userRole === "MANAGER";
-		if (!isPrivileged && asset.uploader_id !== userId) {
+		const isOwner = asset.uploader_id === userId;
+
+		// If not owner and not privileged, check if asset is shared with user
+		let hasSharedAccess = false;
+		if (!isOwner && !isPrivileged) {
+			const sharedAsset = await prisma.assetShare.findFirst({
+				where: {
+					asset_id: id,
+					is_active: true,
+					OR: [
+						{ share_type: "PUBLIC" },
+						{ share_type: "RESTRICTED", user_id: userId }
+					],
+				},
+			});
+			hasSharedAccess = !!sharedAsset;
+		}
+
+		if (!isOwner && !isPrivileged && !hasSharedAccess) {
 			return res.status(403).json({ status: "error", message: "Forbidden" });
 		}
 

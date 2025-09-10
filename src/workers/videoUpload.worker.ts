@@ -46,7 +46,9 @@ const videoUploadWorker = new Worker<UploadJobData>(
 			logger.debug(`[UploadWorker] 🧹 Cleaned up local file ${localPath}`);
 		} catch (err: unknown) {
 			let message = "Unknown error";
-			if (err instanceof Error) {message = err.message;}
+			if (err instanceof Error) {
+				message = err.message;
+			}
 			logger.error(
 				`[UploadWorker] ❌ Upload failed for ${localPath}: ${message}`,
 			);
@@ -60,19 +62,40 @@ const videoUploadWorker = new Worker<UploadJobData>(
 videoUploadWorker.on("active", job => {
 	logger.debug(`[UploadWorker] 🔄 Job ${job.id} started`);
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE, worker_name: "video-upload", event_name: "active" } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
+				status: JobStatus.ACTIVE,
+				worker_name: "video-upload",
+				event_name: "active",
+			},
+		})
 		.catch(() => {});
 });
 videoUploadWorker.on("completed", job => {
 	logger.info(`[UploadWorker] ✅ Job ${job.id} completed`);
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED, worker_name: "video-upload", event_name: "completed" } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
+				status: JobStatus.COMPLETED,
+				worker_name: "video-upload",
+				event_name: "completed",
+			},
+		})
 		.catch(() => {});
 });
 videoUploadWorker.on("failed", (job, err) => {
 	logger.error(`[UploadWorker] ❌ Job ${job?.id} failed: ${err.message}`);
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED, worker_name: "video-upload", event_name: "failed" } })
+		.update({
+			where: { job_id: String(job?.id) },
+			data: {
+				status: JobStatus.FAILED,
+				worker_name: "video-upload",
+				event_name: "failed",
+			},
+		})
 		.catch(() => {});
 });
 

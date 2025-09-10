@@ -66,7 +66,13 @@ const videoWorker = new Worker<TranscodeJobData>(
 				storagePath: storage_path,
 			});
 			await prisma.transcodingJob.create({
-				data: { asset_id, job_id: String(thumbJob.id), status: JobStatus.PENDING, worker_name: "video-thumbnail", event_name: "enqueued" },
+				data: {
+					asset_id,
+					job_id: String(thumbJob.id),
+					status: JobStatus.PENDING,
+					worker_name: "video-thumbnail",
+					event_name: "enqueued",
+				},
 			});
 			logger.info(
 				`[Worker] 🖼️ Enqueued thumbnail generation for asset_id=${asset_id}`,
@@ -123,7 +129,13 @@ const videoWorker = new Worker<TranscodeJobData>(
 					s3Key: outputKey,
 				});
 				await prisma.transcodingJob.create({
-					data: { asset_id, job_id: String(uploadJob.id), status: JobStatus.PENDING, worker_name: "video-upload", event_name: "enqueued" },
+					data: {
+						asset_id,
+						job_id: String(uploadJob.id),
+						status: JobStatus.PENDING,
+						worker_name: "video-upload",
+						event_name: "enqueued",
+					},
 				});
 
 				// Save transcoded metadata
@@ -147,7 +159,9 @@ const videoWorker = new Worker<TranscodeJobData>(
 			);
 		} catch (err: unknown) {
 			let message = "Unknown error";
-			if (err instanceof Error) {message = err.message;}
+			if (err instanceof Error) {
+				message = err.message;
+			}
 
 			logger.error(
 				`[Worker] 💥 Job ${job.id} for asset_id=${asset_id} failed: ${message}`,
@@ -163,19 +177,28 @@ videoWorker.on("active", job =>
 );
 videoWorker.on("active", job => {
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: { status: JobStatus.ACTIVE },
+		})
 		.catch(() => {});
 });
 videoWorker.on("completed", job => {
 	logger.info(`[Worker] ✅ Job ${job.id} completed`);
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: { status: JobStatus.COMPLETED },
+		})
 		.catch(() => {});
 });
 videoWorker.on("failed", (job, err) => {
 	logger.error(`[Worker] ❌ Job ${job?.id} failed: ${err.message}`);
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED } })
+		.update({
+			where: { job_id: String(job?.id) },
+			data: { status: JobStatus.FAILED },
+		})
 		.catch(() => {});
 });
 

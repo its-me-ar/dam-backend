@@ -11,6 +11,6 @@ router.post(
 	"/register",
 	validate(registerInvitationSchema),
 	registerWithInvitation,
-); 
+);
 
 export default router;

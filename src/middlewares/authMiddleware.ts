@@ -26,7 +26,9 @@ export const authenticate = async (
 
 	try {
 		const secret = process.env.JWT_SECRET;
-		if (!secret) {throw new Error("JWT secret not defined");}
+		if (!secret) {
+			throw new Error("JWT secret not defined");
+		}
 
 		const decoded = jwt.verify(token, secret) as {
 			userId: string;
@@ -37,7 +39,9 @@ export const authenticate = async (
 		const user = await prisma.user.findUnique({
 			where: { id: decoded.userId },
 		});
-		if (!user) {return res.error("User not found", 401);}
+		if (!user) {
+			return res.error("User not found", 401);
+		}
 
 		req.user = { userId: user.id, role: user.role };
 		return next();

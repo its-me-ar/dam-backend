@@ -56,14 +56,22 @@ const imageWorker = new Worker<ImageJobData>(
 				storagePath: storage_path,
 			});
 			await prisma.transcodingJob.create({
-				data: { asset_id, job_id: String(thumbJob.id), status: JobStatus.PENDING, worker_name: "image-thumbnail", event_name: "enqueued" },
+				data: {
+					asset_id,
+					job_id: String(thumbJob.id),
+					status: JobStatus.PENDING,
+					worker_name: "image-thumbnail",
+					event_name: "enqueued",
+				},
 			});
 			logger.info(
 				`[ImageWorker] 🖼️ Enqueued thumbnail generation for asset_id=${asset_id}`,
 			);
 		} catch (err: unknown) {
 			let message = "Unknown error";
-			if (err instanceof Error) {message = err.message;}
+			if (err instanceof Error) {
+				message = err.message;
+			}
 
 			logger.error(`[ImageWorker] ❌ Job ${job.id} failed: ${message}`);
 			throw err;
@@ -74,17 +82,38 @@ const imageWorker = new Worker<ImageJobData>(
 
 imageWorker.on("active", job =>
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.ACTIVE, worker_name: "image-processing", event_name: "active" } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
+				status: JobStatus.ACTIVE,
+				worker_name: "image-processing",
+				event_name: "active",
+			},
+		})
 		.catch(() => {}),
 );
 imageWorker.on("completed", job =>
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job.id) }, data: { status: JobStatus.COMPLETED, worker_name: "image-processing", event_name: "completed" } })
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
+				status: JobStatus.COMPLETED,
+				worker_name: "image-processing",
+				event_name: "completed",
+			},
+		})
 		.catch(() => {}),
 );
-imageWorker.on("failed", (job) =>
+imageWorker.on("failed", job =>
 	prisma.transcodingJob
-		.update({ where: { job_id: String(job?.id) }, data: { status: JobStatus.FAILED, worker_name: "image-processing", event_name: "failed" } })
+		.update({
+			where: { job_id: String(job?.id) },
+			data: {
+				status: JobStatus.FAILED,
+				worker_name: "image-processing",
+				event_name: "failed",
+			},
+		})
 		.catch(() => {}),
 );
 

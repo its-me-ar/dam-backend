@@ -55,8 +55,16 @@ const imageWorker = new Worker<ImageJobData>(
 				localPath: localInput,
 				storagePath: storage_path,
 			});
-			await prisma.transcodingJob.create({
-				data: {
+			
+			// Create transcoding job record with unique job_id
+			await prisma.transcodingJob.upsert({
+				where: { job_id: String(thumbJob.id) },
+				update: {
+					status: JobStatus.PENDING,
+					worker_name: "image-thumbnail",
+					event_name: "enqueued",
+				},
+				create: {
 					asset_id,
 					job_id: String(thumbJob.id),
 					status: JobStatus.PENDING,
@@ -80,41 +88,55 @@ const imageWorker = new Worker<ImageJobData>(
 	{ connection },
 );
 
-imageWorker.on("active", job =>
+imageWorker.on("active", job => {
+	if (!job) {return;}
+	const { asset_id } = job.data;
 	prisma.transcodingJob
-		.update({
-			where: { job_id: String(job.id) },
+		.updateMany({
+			where: { 
+				asset_id,
+				worker_name: "image-processing"
+			},
 			data: {
 				status: JobStatus.ACTIVE,
-				worker_name: "image-processing",
 				event_name: "active",
 			},
 		})
-		.catch(() => {}),
-);
-imageWorker.on("completed", job =>
+		.catch(() => {});
+});
+
+imageWorker.on("completed", job => {
+	if (!job) {return;}
+	const { asset_id } = job.data;
 	prisma.transcodingJob
-		.update({
-			where: { job_id: String(job.id) },
+		.updateMany({
+			where: { 
+				asset_id,
+				worker_name: "image-processing"
+			},
 			data: {
 				status: JobStatus.COMPLETED,
-				worker_name: "image-processing",
 				event_name: "completed",
 			},
 		})
-		.catch(() => {}),
-);
-imageWorker.on("failed", job =>
+		.catch(() => {});
+});
+
+imageWorker.on("failed", job => {
+	if (!job) {return;}
+	const { asset_id } = job.data;
 	prisma.transcodingJob
-		.update({
-			where: { job_id: String(job?.id) },
+		.updateMany({
+			where: { 
+				asset_id,
+				worker_name: "image-processing"
+			},
 			data: {
 				status: JobStatus.FAILED,
-				worker_name: "image-processing",
 				event_name: "failed",
 			},
 		})
-		.catch(() => {}),
-);
+		.catch(() => {});
+});
 
 export default imageWorker;

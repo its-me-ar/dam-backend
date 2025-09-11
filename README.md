@@ -2,6 +2,13 @@
 
 A comprehensive Digital Asset Management backend built with Node.js, Express.js, TypeScript, Prisma, and PostgreSQL. This system provides secure asset upload, processing, sharing, and management capabilities.
 
+## 🏗️ Architecture
+
+![DAM Backend Architecture](docs/architecture-diagram.png)
+
+### System Design Document
+For detailed system design and architecture decisions, see our comprehensive [System Design Document](https://docs.google.com/document/d/1L-u9C3ScYQHpBmluERlxPWECqu_KuoC6nQgvIEyYEgw/edit?tab=t.0).
+
 ## 🚀 Features
 
 ### Core Features

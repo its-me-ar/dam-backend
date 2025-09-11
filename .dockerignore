@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+dist
+coverage
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+DOCKER-PRODUCTION.md
+docs/
+
+# Test files
+__tests__
+*.test.ts
+*.spec.ts
+jest.config.js
+
+# Logs
+logs/
+*.log
+
+# Docker files
+docker-compose*.yml
+Dockerfile*
+
+# Scripts
+scripts/
+
+# Other
+.editorconfig
+.prettierrc
+.eslintrc*
+commitlint.config.cjs

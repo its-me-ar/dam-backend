@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 
 console.log('🔧 Setting up video-worker-app dependencies...');
 
-const mainAppPath = path.join(__dirname, '../../');
+const mainAppPath = path.join(__dirname, '../../../');
 const videoWorkerPath = __dirname.replace('/scripts', '');
 
 // 1. Copy generated Prisma client

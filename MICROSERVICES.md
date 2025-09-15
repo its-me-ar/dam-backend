@@ -7,9 +7,10 @@ This project consists of multiple microservices that work together to provide a 
 ```
 dam-backend/
 ├── src/                    # Main API service
-├── bullmq-app/            # Queue management service
-├── image-worker-app/      # Image processing worker
-├── video-worker-app/      # Video processing worker
+├── microservices/
+│   ├── bullmq-app/        # Queue management service
+│   ├── image-worker/      # Image processing worker
+│   └── video-worker/      # Video processing worker
 └── package.json           # Root package.json with management scripts
 ```
 
@@ -20,17 +21,17 @@ dam-backend/
 - **Port**: 4000
 - **Dependencies**: Express, Prisma, Redis, S3
 
-### 2. **BullMQ App** (`bullmq-app/`)
+### 2. **BullMQ App** (`microservices/bullmq-app/`)
 - **Purpose**: Queue management and job distribution
 - **Port**: 3001
 - **Dependencies**: BullMQ, Redis, IORedis
 
-### 3. **Image Worker App** (`image-worker-app/`)
+### 3. **Image Worker App** (`microservices/image-worker/`)
 - **Purpose**: Image processing, thumbnails, metadata extraction
 - **Port**: 3003
 - **Dependencies**: Sharp, BullMQ, S3, Prisma
 
-### 4. **Video Worker App** (`video-worker-app/`)
+### 4. **Video Worker App** (`microservices/video-worker/`)
 - **Purpose**: Video processing, transcoding, thumbnails
 - **Port**: 3002
 - **Dependencies**: FFmpeg, BullMQ, S3, Prisma

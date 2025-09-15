@@ -155,34 +155,15 @@ export const completeAssetUpload = async (req: Request, res: Response) => {
 		// ✅ enqueue transcoding if asset is a video
 		if (asset.mime_type.startsWith("video")) {
 			logger.info(`[AssetUpload] 🎬 Adding video job for ${asset.asset_id}`);
-			const job = await videoQueue.add("transcode", {
+			await videoQueue.add("transcode", {
 				asset_id: asset.asset_id,
 				storage_path: asset.storage_path,
-			});
-			// record job
-			await prisma.transcodingJob.create({
-				data: {
-					asset_id: asset.asset_id,
-					job_id: String(job.id),
-					status: JobStatus.PENDING,
-					worker_name: "video-processing",
-					event_name: "enqueued",
-				},
 			});
 		} else if (asset.mime_type.startsWith("image")) {
 			logger.info(`[AssetUpload] 🖼️ Adding image job for ${asset.asset_id}`);
-			const job = await imageQueue.add("process-image", {
+			await imageQueue.add("process-image", {
 				asset_id: asset.asset_id,
 				storage_path: asset.storage_path,
-			});
-			await prisma.transcodingJob.create({
-				data: {
-					asset_id: asset.asset_id,
-					job_id: String(job.id),
-					status: JobStatus.PENDING,
-					worker_name: "image-processing",
-					event_name: "enqueued",
-				},
 			});
 		} else {
 			logger.info(

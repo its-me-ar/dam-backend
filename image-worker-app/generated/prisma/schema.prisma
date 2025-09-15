@@ -22,9 +22,9 @@ model User {
   sentInvites Invitation[] @relation("UserInvitations")
 
   // Relation to assets
-  assets Asset[] @relation("UserAssets")
+  assets           Asset[]      @relation("UserAssets")
   // Relation to shared assets
-  sharedAssets AssetShare[]
+  sharedAssets     AssetShare[]
   // Relation to restricted shares
   restrictedShares AssetShare[] @relation("RestrictedShares")
 }
@@ -42,23 +42,23 @@ model Invitation {
 }
 
 model Asset {
-  asset_id     String          @id @default(uuid())
-  filename     String          @db.VarChar(255)
-  mime_type    String          @db.VarChar(50)
-  storage_path String          @db.VarChar(255)
-  uploader_id  String
-  uploader     User            @relation("UserAssets", fields: [uploader_id], references: [id])
-  group_id     String? // nullable
-  size_bytes   Int
-  status       AssetStatus     @default(START)
-  created_at   DateTime        @default(now())
-  updated_at   DateTime        @updatedAt
+  asset_id        String           @id @default(uuid())
+  filename        String           @db.VarChar(255)
+  mime_type       String           @db.VarChar(50)
+  storage_path    String           @db.VarChar(255)
+  uploader_id     String
+  uploader        User             @relation("UserAssets", fields: [uploader_id], references: [id])
+  group_id        String? // nullable
+  size_bytes      Int
+  status          AssetStatus      @default(START)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
   // Relation to metadata
-  metadata     AssetMetadata[]
+  metadata        AssetMetadata[]
   // Relation to transcoding jobs
   transcodingJobs TranscodingJob[]
   // Relation to sharing
-  shares       AssetShare[]
+  shares          AssetShare[]
 }
 
 model AssetMetadata {
@@ -95,14 +95,14 @@ enum InvitationRole {
 }
 
 model TranscodingJob {
-  id         String    @id @default(uuid())
-  asset_id   String
-  job_id     String    @unique
-  worker_name String   @default("unknown")
-  event_name  String   @default("enqueued")
-  status     JobStatus @default(PENDING)
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  asset_id    String
+  job_id      String    @unique
+  worker_name String    @default("unknown")
+  event_name  String    @default("enqueued")
+  status      JobStatus @default(PENDING)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
   asset Asset @relation(fields: [asset_id], references: [asset_id])
 
@@ -122,14 +122,14 @@ model AssetShare {
   asset       Asset    @relation(fields: [asset_id], references: [asset_id])
   shared_by   String
   sharedBy    User     @relation(fields: [shared_by], references: [id])
-  share_type  String   // 'PUBLIC' or 'RESTRICTED'
+  share_type  String // 'PUBLIC' or 'RESTRICTED'
   share_token String   @unique
-  user_id     String?  // For RESTRICTED shares - which user can access
+  user_id     String? // For RESTRICTED shares - which user can access
   user        User?    @relation("RestrictedShares", fields: [user_id], references: [id])
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
-  
+
   @@index([asset_id])
   @@index([shared_by])
   @@index([share_token])

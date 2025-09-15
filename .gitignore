@@ -54,3 +54,4 @@ coverage/
 # Generated files
 generated/prisma
 swagger.yaml
+.env.docker

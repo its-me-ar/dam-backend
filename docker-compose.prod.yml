@@ -28,23 +28,40 @@ services:
     networks:
       - dam-network
 
-  # Workers service
-  dam-workers:
+  # Standalone Bull MQ Application
+  bullmq-app:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.workers
-    container_name: dam-workers-prod
+      context: ./bullmq-app
+      dockerfile: Dockerfile
+    container_name: dam-bullmq-prod
     environment:
       - NODE_ENV=production
-      - PORT=4000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=info
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - dam-network
+
+  # Standalone Video Worker Application
+  video-worker-app:
+    build:
+      context: .
+      dockerfile: ./video-worker-app/Dockerfile
+    container_name: dam-video-worker-prod
+    environment:
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://dam_user:dam_password@postgres:5432/dam_backend
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET=dam-assets
+      - MINIO_BUCKET_NAME=dam-assets
       - MINIO_REGION=us-east-1
+      - LOG_LEVEL=info
     depends_on:
       - postgres
       - redis
@@ -52,6 +69,10 @@ services:
     restart: unless-stopped
     networks:
       - dam-network
+    volumes:
+      - /tmp:/tmp  # For video processing temp files
+      - ./generated:/app/generated  # Shared Prisma client
+      - ./prisma:/app/prisma  # Shared Prisma schema
 
   # PostgreSQL database
   postgres:

@@ -49,16 +49,7 @@ export const mockS3Service = {
 	downloadToFile: jest.fn(),
 } as unknown as S3Service;
 
-// Mock video and image queues
-export const mockVideoQueue = {
-	add: jest.fn(),
-	process: jest.fn(),
-};
-
-export const mockImageQueue = {
-	add: jest.fn(),
-	process: jest.fn(),
-};
+// Note: Queue mocking removed as queues are now handled by separate worker applications
 
 // Mock logger
 export const mockLogger = {

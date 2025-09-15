@@ -71,19 +71,7 @@ jest.mock("../../services/S3Service", () => ({
 	})),
 }));
 
-jest.mock("../../queues/video.queue", () => ({
-	videoQueue: {
-		add: jest.fn(),
-		process: jest.fn(),
-	},
-}));
-
-jest.mock("../../queues/image.queue", () => ({
-	imageQueue: {
-		add: jest.fn(),
-		process: jest.fn(),
-	},
-}));
+// Note: Queue mocking removed as queues are now handled by separate worker applications
 
 jest.mock("../../config/logger", () => ({
 	info: jest.fn(),

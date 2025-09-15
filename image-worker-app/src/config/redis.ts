@@ -1,18 +1,34 @@
-import { Redis } from "ioredis";
+import IORedis from "ioredis";
+import logger from "./logger";
 
-const redis = new Redis({
-	host: process.env.REDIS_HOST || "localhost",
-	port: parseInt(process.env.REDIS_PORT || "6379"),
-	enableReadyCheck: false,
-	maxRetriesPerRequest: null,
-});
+// Singleton pattern to prevent multiple Redis connections
+let redisInstance: IORedis | null = null;
 
-redis.on("connect", () => {
-	console.log("Connected to Redis");
-});
+export function getRedisConnection(): IORedis {
+	if (!redisInstance) {
+		redisInstance = new IORedis({
+			host: process.env.REDIS_HOST || "127.0.0.1",
+			port: Number(process.env.REDIS_PORT) || 6379,
+			maxRetriesPerRequest: null,
+			enableReadyCheck: false,
+		});
 
-redis.on("error", (err) => {
-	console.error("Redis connection error:", err);
-});
+		redisInstance.on("connect", () => logger.info("[Redis] Connected to Redis ✅"));
+		redisInstance.on("error", err => logger.error("[Redis] Connection error ❌", err));
+		redisInstance.on("close", () => logger.warn("[Redis] Connection closed"));
+		redisInstance.on("reconnecting", () => logger.info("[Redis] Reconnecting to Redis..."));
+	}
 
-export default redis;
+	return redisInstance;
+}
+
+// Graceful shutdown
+export async function closeRedisConnection(): Promise<void> {
+	if (redisInstance) {
+		await redisInstance.quit();
+		redisInstance = null;
+		logger.info("[Redis] Connection closed gracefully");
+	}
+}
+
+export default getRedisConnection();

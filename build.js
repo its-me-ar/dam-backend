@@ -36,11 +36,10 @@ if (fs.existsSync(path.join(__dirname, 'generated'))) {
 // Fix generated/prisma paths in compiled files
 console.log('🔧 Fixing generated/prisma paths...');
 const { execSync } = require('child_process');
+
 try {
-  // Fix paths in root level files
-  execSync('find dist -maxdepth 1 -name "*.js" -exec sed -i "" "s/require(\\"generated\\/prisma\\")/require(\\".\\/generated\\/prisma\\")/g" {} \\;', { stdio: 'inherit' });
-  // Fix paths in subdirectories (need ../generated/prisma)
-  execSync('find dist -mindepth 2 -name "*.js" -exec sed -i "" "s/require(\\"generated\\/prisma\\")/require(\\"..\\/generated\\/prisma\\")/g" {} \\;', { stdio: 'inherit' });
+  // Use find command to locate all JS files and fix paths
+  execSync('find dist -name "*.js" -exec node -e \'const fs=require("fs"); const path=require("path"); const file=process.argv[1]; const content=fs.readFileSync(file,"utf8"); const depth=file.split("/").length-2; const relativePath="../".repeat(depth)+"generated/prisma"; const newContent=content.replace(/require\\("generated\\/prisma"\\)/g, `require("${relativePath}")`); fs.writeFileSync(file,newContent);\' {} \\;', { stdio: 'inherit' });
   console.log('✅ Fixed generated/prisma paths');
 } catch (error) {
   console.error('❌ Failed to fix paths:', error.message);

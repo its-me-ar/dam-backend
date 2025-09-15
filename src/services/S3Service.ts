@@ -18,6 +18,7 @@ dotenv.config();
 
 export class S3Service {
 	private client: S3Client;
+	private presignedClient: S3Client;
 	private readonly bucket: string;
 
 	constructor() {
@@ -25,11 +26,24 @@ export class S3Service {
 		const secretKey = process.env.MINIO_SECRET_KEY!;
 		const bucketName = process.env.MINIO_BUCKET_NAME!;
 		const endpoint = process.env.MINIO_ENDPOINT!;
+		const presignedEndpoint = process.env.MINIO_PRESIGNED_ENDPOINT || endpoint;
 		const region = process.env.MINIO_REGION || "us-east-1";
 
+		// Client for internal operations (uses Docker service name)
 		this.client = new S3Client({
 			region,
 			endpoint,
+			credentials: {
+				accessKeyId: accessKey,
+				secretAccessKey: secretKey,
+			},
+			forcePathStyle: true, // required for MinIO
+		});
+
+		// Client for presigned URLs (uses external URL)
+		this.presignedClient = new S3Client({
+			region,
+			endpoint: presignedEndpoint,
 			credentials: {
 				accessKeyId: accessKey,
 				secretAccessKey: secretKey,
@@ -69,7 +83,7 @@ export class S3Service {
 			Bucket: this.bucket,
 			Key: key,
 		});
-		return getSignedUrl(this.client, command, { expiresIn });
+		return getSignedUrl(this.presignedClient, command, { expiresIn });
 	}
 
 	/**
@@ -80,7 +94,7 @@ export class S3Service {
 		expiresIn: number = 3600,
 	): Promise<string> {
 		const command: GetObjectCommandInput = { Bucket: this.bucket, Key: key };
-		return getSignedUrl(this.client, new GetObjectCommand(command), {
+		return getSignedUrl(this.presignedClient, new GetObjectCommand(command), {
 			expiresIn,
 		});
 	}

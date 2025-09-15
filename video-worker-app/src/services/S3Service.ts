@@ -27,6 +27,7 @@ export class S3Service {
 		const endpoint = process.env.MINIO_ENDPOINT!;
 		const region = process.env.MINIO_REGION || "us-east-1";
 
+		// Workers use Docker service name for internal operations
 		this.client = new S3Client({
 			region,
 			endpoint,

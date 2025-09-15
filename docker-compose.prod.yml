@@ -1,130 +1,107 @@
-version: "3.8"
-
 services:
   # Main API service
   dam-backend:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
-    container_name: dam-backend-prod
+    container_name: dam-backend
     ports:
       - "4000:4000"
-    environment:
-      - NODE_ENV=production
-      - PORT=4000
-      - DATABASE_URL=postgresql://dam_user:dam_password@postgres:5432/dam_backend
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET=dam-assets
-      - MINIO_REGION=us-east-1
+    env_file:
+      - .env.prod
     depends_on:
       - postgres
-      - redis
       - minio
-    restart: unless-stopped
-    networks:
-      - dam-network
+      - redis
 
   # Standalone Bull MQ Application
   bullmq-app:
     build:
       context: ./bullmq-app
       dockerfile: Dockerfile
-    container_name: dam-bullmq-prod
-    environment:
-      - NODE_ENV=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - LOG_LEVEL=info
+    container_name: dam-bullmq-app
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.prod
     depends_on:
       - redis
     restart: unless-stopped
-    networks:
-      - dam-network
 
   # Standalone Video Worker Application
   video-worker-app:
     build:
       context: .
       dockerfile: ./video-worker-app/Dockerfile
-    container_name: dam-video-worker-prod
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://dam_user:dam_password@postgres:5432/dam_backend
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET_NAME=dam-assets
-      - MINIO_REGION=us-east-1
-      - LOG_LEVEL=info
+    container_name: dam-video-worker-app
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env.prod
     depends_on:
-      - postgres
       - redis
+      - postgres
       - minio
     restart: unless-stopped
-    networks:
-      - dam-network
     volumes:
       - /tmp:/tmp  # For video processing temp files
       - ./generated:/app/generated  # Shared Prisma client
       - ./prisma:/app/prisma  # Shared Prisma schema
 
-  # PostgreSQL database
+  # Standalone Image Worker Application
+  image-worker-app:
+    build:
+      context: .
+      dockerfile: ./image-worker-app/Dockerfile
+    container_name: dam-image-worker-app
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env.prod
+    depends_on:
+      - redis
+      - postgres
+      - minio
+    restart: unless-stopped
+    volumes:
+      - /tmp:/tmp  # For image processing temp files
+      - ./generated:/app/generated  # Shared Prisma client
+      - ./prisma:/app/prisma  # Shared Prisma schema
+
   postgres:
     image: postgres:16-alpine
-    container_name: dam-postgres-prod
+    container_name: dam-postgres
     environment:
-      POSTGRES_USER: dam_user
-      POSTGRES_PASSWORD: dam_password
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: dam_backend
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - dam-network
+      - pgdata:/var/lib/postgresql/data
 
-  # Redis cache and queue
-  redis:
-    image: redis:7-alpine
-    container_name: dam-redis-prod
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    networks:
-      - dam-network
-
-  # MinIO object storage
   minio:
     image: quay.io/minio/minio:latest
-    container_name: dam-minio-prod
+    container_name: dam-minio
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"   # S3 API
       - "9001:9001"   # Web console
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-admin12345}
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin12345
     volumes:
       - minio_data:/data
-    restart: unless-stopped
-    networks:
-      - dam-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dam-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
-  postgres_data:
-  redis_data:
+  pgdata:
   minio_data:
-
-networks:
-  dam-network:
-    driver: bridge
+  redis_data:

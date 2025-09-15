@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import sharp from "sharp";
 import fs from "fs";
 import { S3Service } from "../services/S3Service";
-import connection from "../config/redis";
+import { getQueueConnection } from "../config/redis";
 import logger from "../config/logger";
 import { imageThumbnailQueue } from "../queues/image.queue";
 import { upsertImageMetadata } from "../utils/upsertImageMetadata";
@@ -117,7 +117,7 @@ const imageWorker = new Worker<ImageJobData>(
 			throw err;
 		}
 	},
-	{ connection },
+	{ connection: getQueueConnection() },
 );
 
 imageWorker.on("active", job => {

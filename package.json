@@ -23,6 +23,7 @@
 		"prod:down": "docker-compose -f docker-compose.prod.yml down",
 		"prod:logs": "docker-compose -f docker-compose.prod.yml logs -f",
 		"prod:restart": "docker-compose -f docker-compose.prod.yml restart",
+		"prod:rebuild": "docker-compose -f docker-compose.prod.yml up --build -d",
 		"prisma:migrate": "npx prisma migrate dev --name",
 		"prisma:generate": "npx prisma generate",
 		"prisma:studio": "npx prisma studio",
@@ -33,7 +34,20 @@
 		"clean": "rm -rf dist",
 		"type-check": "tsc --noEmit",
 		"format": "prettier --config ./.prettierrc --write src/**/*",
-		"format:check": "prettier --config ./.prettierrc --check src/**/*"
+		"format:check": "prettier --config ./.prettierrc --check src/**/*",
+		"microservices:install": "npm install && cd bullmq-app && npm install && cd ../image-worker-app && npm install && cd ../video-worker-app && npm install",
+		"microservices:build": "npm run build && cd bullmq-app && npm run build && cd ../image-worker-app && npm run build && cd ../video-worker-app && npm run build",
+		"microservices:clean": "npm run clean && cd bullmq-app && npm run clean && cd ../image-worker-app && npm run clean && cd ../video-worker-app && npm run clean",
+		"microservices:dev": "concurrently \"npm run dev\" \"cd bullmq-app && npm run dev\" \"cd image-worker-app && npm run dev\" \"cd video-worker-app && npm run dev\"",
+		"bullmq:dev": "cd bullmq-app && npm run dev",
+		"bullmq:build": "cd bullmq-app && npm run build",
+		"bullmq:start": "cd bullmq-app && npm run start",
+		"image-worker:dev": "cd image-worker-app && npm run dev",
+		"image-worker:build": "cd image-worker-app && npm run build",
+		"image-worker:start": "cd image-worker-app && npm run start",
+		"video-worker:dev": "cd video-worker-app && npm run dev",
+		"video-worker:build": "cd video-worker-app && npm run build",
+		"video-worker:start": "cd video-worker-app && npm run start"
 	},
 	"lint-staged": {
 		"src/**/*.{ts,js}": [
@@ -80,6 +94,7 @@
 		"@types/yamljs": "^0.2.34",
 		"@typescript-eslint/eslint-plugin": "^8.41.0",
 		"@typescript-eslint/parser": "^8.41.0",
+		"concurrently": "^9.1.0",
 		"eslint": "^9.34.0",
 		"globals": "^16.3.0",
 		"husky": "^9.1.7",

@@ -6,7 +6,7 @@ import ffmpegPath from "ffmpeg-static";
 // import ffprobePath from "ffprobe-static";
 import axios from "axios";
 import { S3Service } from "../services/S3Service";
-import connection from "../config/redis";
+import { getQueueConnection } from "../config/redis";
 import logger from "../config/logger";
 import { upsertVideoMetadata } from "../utils/upsertVideoMetadata";
 import { PrismaClient, JobStatus } from "../../generated/prisma";
@@ -105,44 +105,56 @@ const videoThumbnailWorker = new Worker<ThumbnailJobData>(
 			throw err;
 		}
 	},
-	{ connection },
+	{ connection: getQueueConnection() },
 );
 
-videoThumbnailWorker.on("active", job =>
-	prisma.transcodingJob
-		.update({
+videoThumbnailWorker.on("active", async job => {
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job.id) },
 			data: {
 				status: JobStatus.ACTIVE,
 				worker_name: "video-thumbnail",
 				event_name: "active",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {}),
-);
-videoThumbnailWorker.on("completed", job => {
-	prisma.transcodingJob
-		.update({
+		});
+		logger.debug(`[ThumbnailWorker] ✅ Job ${job.id} status updated to ACTIVE in database`);
+	} catch (error) {
+		logger.error(`[ThumbnailWorker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
+});
+videoThumbnailWorker.on("completed", async job => {
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job.id) },
 			data: {
 				status: JobStatus.COMPLETED,
 				worker_name: "video-thumbnail",
 				event_name: "completed",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {});
+		});
+		logger.info(`[ThumbnailWorker] ✅ Job ${job.id} status updated to COMPLETED in database`);
+	} catch (error) {
+		logger.error(`[ThumbnailWorker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
-videoThumbnailWorker.on("failed", (job, _err) =>
-	prisma.transcodingJob
-		.update({
+videoThumbnailWorker.on("failed", async (job, _err) => {
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job?.id) },
 			data: {
 				status: JobStatus.FAILED,
 				worker_name: "video-thumbnail",
 				event_name: "failed",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {}),
-);
+		});
+		logger.info(`[ThumbnailWorker] ✅ Job ${job?.id} status updated to FAILED in database`);
+	} catch (error) {
+		logger.error(`[ThumbnailWorker] ❌ Failed to update job ${job?.id} status in database:`, error);
+	}
+});
 
 export default videoThumbnailWorker;

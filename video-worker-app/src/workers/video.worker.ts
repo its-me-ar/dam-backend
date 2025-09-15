@@ -5,7 +5,7 @@ import ffmpegPath from "ffmpeg-static";
 import path from "path";
 import fs from "fs";
 import { S3Service } from "../services/S3Service";
-import connection from "../config/redis";
+import { getQueueConnection } from "../config/redis";
 import logger from "../config/logger";
 import { extractVideoMetadata } from "../utils/extractVideoMetadata";
 import { upsertVideoMetadata } from "../utils/upsertVideoMetadata";
@@ -203,61 +203,73 @@ const videoWorker = new Worker<TranscodeJobData>(
 			throw err;
 		}
 	},
-	{ connection },
+	{ connection: getQueueConnection() },
 );
 
-videoWorker.on("active", job => {
+videoWorker.on("active", async job => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
 	logger.debug(`[Worker] 🔄 Job ${job.id} started for asset_id=${asset_id}`);
-	prisma.transcodingJob
-		.updateMany({
+	try {
+		await prisma.transcodingJob.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "video-processing"
 			},
 			data: { 
 				status: JobStatus.ACTIVE,
-				event_name: "active"
+				event_name: "active",
+				updated_at: new Date()
 			},
-		})
-		.catch(() => {});
+		});
+		logger.debug(`[Worker] ✅ Job ${job.id} status updated to ACTIVE in database`);
+	} catch (error) {
+		logger.error(`[Worker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
 
-videoWorker.on("completed", job => {
+videoWorker.on("completed", async job => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
 	logger.info(`[Worker] ✅ Job ${job.id} completed for asset_id=${asset_id}`);
-	prisma.transcodingJob
-		.updateMany({
+	try {
+		await prisma.transcodingJob.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "video-processing"
 			},
 			data: { 
 				status: JobStatus.COMPLETED,
-				event_name: "completed"
+				event_name: "completed",
+				updated_at: new Date()
 			},
-		})
-		.catch(() => {});
+		});
+		logger.info(`[Worker] ✅ Job ${job.id} status updated to COMPLETED in database`);
+	} catch (error) {
+		logger.error(`[Worker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
 
-videoWorker.on("failed", (job, err) => {
+videoWorker.on("failed", async (job, err) => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
 	logger.error(`[Worker] ❌ Job ${job.id} failed for asset_id=${asset_id}: ${err.message}`);
-	prisma.transcodingJob
-		.updateMany({
+	try {
+		await prisma.transcodingJob.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "video-processing"
 			},
 			data: { 
 				status: JobStatus.FAILED,
-				event_name: "failed"
+				event_name: "failed",
+				updated_at: new Date()
 			},
-		})
-		.catch(() => {});
+		});
+		logger.info(`[Worker] ✅ Job ${job.id} status updated to FAILED in database`);
+	} catch (error) {
+		logger.error(`[Worker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
 
 export default videoWorker;

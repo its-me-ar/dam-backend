@@ -1,23 +1,17 @@
 import dotenv from "dotenv";
 import logger from "./config/logger";
-import { closeRedisConnection } from "./config/redis";
+import { getPubSubConnection, closeRedisConnection } from "./config/redis";
 import imageWorker from "./workers/image.worker";
 import imageThumbnailWorker from "./workers/imageThumbnail.worker";
-import { imageQueue } from "./queues/image.queue";
-import IORedis from "ioredis";
+import { imageService } from "./services";
 
 // Load environment variables
 dotenv.config();
 
 // Event-driven architecture - listen to Redis events
 
-// Create separate Redis connection for pub/sub
-const connection = new IORedis({
-	host: process.env.REDIS_HOST || "127.0.0.1",
-	port: Number(process.env.REDIS_PORT) || 6379,
-	maxRetriesPerRequest: null,
-	enableReadyCheck: false,
-});
+// Get Redis connection using the connection manager
+const connection = getPubSubConnection();
 
 // Listen for image job events from BullMQ app
 connection.subscribe("image_worker_events", (err, count) => {
@@ -51,13 +45,18 @@ async function handleImageJobEvent(event: any) {
 		
 		logger.info(`📥 Received image job event for asset: ${asset_id}`);
 
-		// Add job to the image queue
-		await imageQueue.add("process-image", {
-			asset_id,
-			storage_path,
-		});
-
-		logger.info(`✅ Image job queued for asset: ${asset_id}`);
+		try {
+			// Process image using the service
+			const result = await imageService.processImage(asset_id, storage_path);
+			
+			if (result.success) {
+				logger.info(`✅ Successfully processed image: ${asset_id}`);
+			} else {
+				logger.error(`❌ Failed to process image: ${asset_id} - ${result.error}`);
+			}
+		} catch (error) {
+			logger.error(`❌ Error processing image ${asset_id}:`, error);
+		}
 	}
 }
 
@@ -91,7 +90,7 @@ async function startImageWorkerApp() {
 				imageWorker.close(),
 				imageThumbnailWorker.close(),
 			]);
-			await connection.quit();
+			await closeRedisConnection(); // Close all connections
 			process.exit(0);
 		});
 
@@ -101,7 +100,7 @@ async function startImageWorkerApp() {
 				imageWorker.close(),
 				imageThumbnailWorker.close(),
 			]);
-			await connection.quit();
+			await closeRedisConnection(); // Close all connections
 			process.exit(0);
 		});
 

@@ -4,7 +4,7 @@ import { Worker } from "bullmq";
 import sharp from "sharp";
 import axios from "axios";
 import { S3Service } from "../services/S3Service";
-import connection from "../config/redis";
+import { getQueueConnection } from "../config/redis";
 import logger from "../config/logger";
 import { upsertImageMetadata } from "../utils/upsertImageMetadata";
 import { PrismaClient, JobStatus } from "../../generated/prisma";
@@ -117,7 +117,7 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 			throw err;
 		}
 	},
-	{ connection },
+	{ connection: getQueueConnection() },
 );
 
 imageThumbnailWorker.on("active", job => {

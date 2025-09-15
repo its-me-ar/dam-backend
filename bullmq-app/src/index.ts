@@ -1,30 +1,11 @@
 import dotenv from "dotenv";
 import logger from "./config/logger";
-import { getRedisConnection, closeRedisConnection } from "./config/redis";
-import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import { getPubSubConnection, closeRedisConnection } from "./config/redis";
+import { queueService } from "./services";
+import { RedisMessage } from "./types/job.types";
 
 // Load environment variables
 dotenv.config();
-
-// Create separate Redis connections for different purposes
-const pubSubConnection = new IORedis({
-	host: process.env.REDIS_HOST || "127.0.0.1",
-	port: Number(process.env.REDIS_PORT) || 6379,
-	maxRetriesPerRequest: null,
-	enableReadyCheck: false,
-});
-
-const queueConnection = new IORedis({
-	host: process.env.REDIS_HOST || "127.0.0.1",
-	port: Number(process.env.REDIS_PORT) || 6379,
-	maxRetriesPerRequest: null,
-	enableReadyCheck: false,
-});
-
-// Create queues for different job types
-const videoQueue = new Queue("video-processing", { connection: queueConnection });
-const imageQueue = new Queue("image-processing", { connection: queueConnection });
 
 // Event-driven architecture - no HTTP endpoints needed
 
@@ -32,13 +13,15 @@ async function startBullMQApp() {
 	try {
 		logger.info("🚀 Starting Bull MQ Application...");
 
+		// Get Redis connections
+		const pubSubConnection = getPubSubConnection();
+		
 		// Test Redis connections
 		await pubSubConnection.ping();
-		await queueConnection.ping();
 		logger.info("✅ Redis connections established");
 
 		// Listen for jobs from main app
-		pubSubConnection.subscribe("bullmq_jobs", (err, count) => {
+		pubSubConnection.subscribe("bullmq_jobs", (err: any, count: any) => {
 			if (err) {
 				logger.error("❌ Error subscribing to bullmq_jobs:", err);
 				return;
@@ -47,7 +30,7 @@ async function startBullMQApp() {
 		});
 
 		// Handle incoming jobs
-		pubSubConnection.on("message", async (channel, message) => {
+		pubSubConnection.on("message", async (channel: any, message: any) => {
 			if (channel === "bullmq_jobs") {
 				try {
 					const job = JSON.parse(message);
@@ -59,21 +42,19 @@ async function startBullMQApp() {
 		});
 
 		logger.info("📊 Bull MQ Application is ready to receive jobs:");
-		logger.info("   - video-processing");
-		logger.info("   - image-processing");
+		logger.info("   - video job events");
+		logger.info("   - image job events");
 
 		// Keep the process alive
 		process.on("SIGINT", async () => {
 			logger.info("🛑 Shutting down Bull MQ Application...");
-			await pubSubConnection.quit();
-			await queueConnection.quit();
+			await closeRedisConnection(); // Close all connections
 			process.exit(0);
 		});
 
 		process.on("SIGTERM", async () => {
 			logger.info("🛑 Shutting down Bull MQ Application...");
-			await pubSubConnection.quit();
-			await queueConnection.quit();
+			await closeRedisConnection(); // Close all connections
 			process.exit(0);
 		});
 
@@ -87,15 +68,15 @@ async function startBullMQApp() {
 /**
  * Handle incoming job and forward to appropriate worker app
  */
-async function handleJob(job: any) {
+async function handleJob(job: RedisMessage) {
 	const { type, data } = job;
 	
 	try {
 		if (type === "video_processing") {
 			logger.info(`🎬 Processing video job for ${data.asset_id}`);
 			
-			// Add job to video queue
-			await videoQueue.add("transcode", {
+			// Add job to video queue using service
+			await queueService.addVideoJob({
 				asset_id: data.asset_id,
 				storage_path: data.storage_path,
 			});
@@ -106,8 +87,8 @@ async function handleJob(job: any) {
 		} else if (type === "image_processing") {
 			logger.info(`🖼️ Processing image job for ${data.asset_id}`);
 			
-			// Add job to image queue
-			await imageQueue.add("process-image", {
+			// Add job to image queue using service
+			await queueService.addImageJob({
 				asset_id: data.asset_id,
 				storage_path: data.storage_path,
 			});
@@ -137,9 +118,8 @@ async function forwardToWorker(workerType: string, data: any) {
 			},
 		};
 
-		// Publish to worker-specific channel using queue connection
-		await queueConnection.publish(`${workerType}_worker_events`, JSON.stringify(event));
-		logger.info(`✅ Successfully published ${workerType} job event`);
+		// Use service to publish job event
+		await queueService.publishJobEvent(workerType, event);
 	} catch (error) {
 		logger.error(`❌ Failed to publish ${workerType} job event:`, error);
 		// Job is still in queue, so it can be retried

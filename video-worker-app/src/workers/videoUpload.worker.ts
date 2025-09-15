@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import fs from "fs";
 import axios from "axios";
-import connection from "../config/redis";
+import { getQueueConnection } from "../config/redis";
 import logger from "../config/logger";
 import { PrismaClient, JobStatus } from "../../generated/prisma";
 
@@ -55,48 +55,60 @@ const videoUploadWorker = new Worker<UploadJobData>(
 			throw err; // so BullMQ marks the job as failed
 		}
 	},
-	{ connection },
+	{ connection: getQueueConnection() },
 );
 
 // Worker lifecycle events
-videoUploadWorker.on("active", job => {
+videoUploadWorker.on("active", async job => {
 	logger.debug(`[UploadWorker] 🔄 Job ${job.id} started`);
-	prisma.transcodingJob
-		.update({
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job.id) },
 			data: {
 				status: JobStatus.ACTIVE,
 				worker_name: "video-upload",
 				event_name: "active",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {});
+		});
+		logger.debug(`[UploadWorker] ✅ Job ${job.id} status updated to ACTIVE in database`);
+	} catch (error) {
+		logger.error(`[UploadWorker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
-videoUploadWorker.on("completed", job => {
+videoUploadWorker.on("completed", async job => {
 	logger.info(`[UploadWorker] ✅ Job ${job.id} completed`);
-	prisma.transcodingJob
-		.update({
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job.id) },
 			data: {
 				status: JobStatus.COMPLETED,
 				worker_name: "video-upload",
 				event_name: "completed",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {});
+		});
+		logger.info(`[UploadWorker] ✅ Job ${job.id} status updated to COMPLETED in database`);
+	} catch (error) {
+		logger.error(`[UploadWorker] ❌ Failed to update job ${job.id} status in database:`, error);
+	}
 });
-videoUploadWorker.on("failed", (job, err) => {
+videoUploadWorker.on("failed", async (job, err) => {
 	logger.error(`[UploadWorker] ❌ Job ${job?.id} failed: ${err.message}`);
-	prisma.transcodingJob
-		.update({
+	try {
+		await prisma.transcodingJob.update({
 			where: { job_id: String(job?.id) },
 			data: {
 				status: JobStatus.FAILED,
 				worker_name: "video-upload",
 				event_name: "failed",
+				updated_at: new Date(),
 			},
-		})
-		.catch(() => {});
+		});
+		logger.info(`[UploadWorker] ✅ Job ${job?.id} status updated to FAILED in database`);
+	} catch (error) {
+		logger.error(`[UploadWorker] ❌ Failed to update job ${job?.id} status in database:`, error);
+	}
 });
 
 export default videoUploadWorker;

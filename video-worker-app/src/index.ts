@@ -4,18 +4,13 @@ import videoWorker from "./workers/video.worker";
 import videoThumbnailWorker from "./workers/videoThumbnail.worker";
 import videoUploadWorker from "./workers/videoUpload.worker";
 import { videoQueue } from "./queues/video.queue";
-import IORedis from "ioredis";
+import { getPubSubConnection, closeRedisConnection } from "./config/redis";
 
 // Load environment variables
 dotenv.config();
 
-// Create separate Redis connection for pub/sub
-const connection = new IORedis({
-	host: process.env.REDIS_HOST || "127.0.0.1",
-	port: Number(process.env.REDIS_PORT) || 6379,
-	maxRetriesPerRequest: null,
-	enableReadyCheck: false,
-});
+// Get Redis connection for pub/sub
+const connection = getPubSubConnection();
 
 // Listen for video job events from BullMQ app
 connection.subscribe("video_worker_events", (err, count) => {
@@ -82,7 +77,7 @@ async function startVideoWorkerApp() {
 			await videoWorker.close();
 			await videoThumbnailWorker.close();
 			await videoUploadWorker.close();
-			await connection.quit();
+			await closeRedisConnection();
 			process.exit(0);
 		});
 
@@ -91,7 +86,7 @@ async function startVideoWorkerApp() {
 			await videoWorker.close();
 			await videoThumbnailWorker.close();
 			await videoUploadWorker.close();
-			await connection.quit();
+			await closeRedisConnection();
 			process.exit(0);
 		});
 

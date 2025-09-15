@@ -57,16 +57,16 @@ swagger.yaml
 .env.docker
 
 # Microservice generated files
-bullmq-app/generated/
-image-worker-app/generated/
-video-worker-app/generated/
+microservices/bullmq-app/generated/
+microservices/image-worker/generated/
+microservices/video-worker/generated/
 
 # Microservice build outputs
-bullmq-app/dist/
-image-worker-app/dist/
-video-worker-app/dist/
+microservices/bullmq-app/dist/
+microservices/image-worker/dist/
+microservices/video-worker/dist/
 
 # Microservice logs
-bullmq-app/logs/
-image-worker-app/logs/
-video-worker-app/logs/
+microservices/bullmq-app/logs/
+microservices/image-worker/logs/
+microservices/video-worker/logs/

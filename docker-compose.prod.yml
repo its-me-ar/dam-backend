@@ -17,7 +17,7 @@ services:
   # Standalone Bull MQ Application
   bullmq-app:
     build:
-      context: ./bullmq-app
+      context: ./microservices/bullmq-app
       dockerfile: Dockerfile
     container_name: dam-bullmq-app
     ports:
@@ -32,7 +32,7 @@ services:
   video-worker-app:
     build:
       context: .
-      dockerfile: ./video-worker-app/Dockerfile
+      dockerfile: ./microservices/video-worker/Dockerfile
     container_name: dam-video-worker-app
     ports:
       - "3002:3002"
@@ -52,7 +52,7 @@ services:
   image-worker-app:
     build:
       context: .
-      dockerfile: ./image-worker-app/Dockerfile
+      dockerfile: ./microservices/image-worker/Dockerfile
     container_name: dam-image-worker-app
     ports:
       - "3003:3003"

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # dam-backend:
   #   build:
@@ -13,6 +11,60 @@ services:
   #     - postgres
   #     - minio
   #     - redis
+
+  # Standalone Bull MQ Application
+  bullmq-app:
+    build:
+      context: ./microservices/bullmq-app
+      dockerfile: Dockerfile
+    container_name: dam-bullmq-app
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.docker
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Standalone Video Worker Application
+  video-worker-app:
+    build:
+      context: .
+      dockerfile: ./microservices/video-worker/Dockerfile
+    container_name: dam-video-worker-app
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env.docker
+    depends_on:
+      - redis
+      - postgres
+      - minio
+    restart: unless-stopped
+    volumes:
+      - /tmp:/tmp  # For video processing temp files
+      - ./generated:/app/generated  # Shared Prisma client
+      - ./prisma:/app/prisma  # Shared Prisma schema
+
+  # Standalone Image Worker Application
+  image-worker-app:
+    build:
+      context: .
+      dockerfile: ./microservices/image-worker/Dockerfile
+    container_name: dam-image-worker-app
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env.docker
+    depends_on:
+      - redis
+      - postgres
+      - minio
+    restart: unless-stopped
+    volumes:
+      - /tmp:/tmp  # For image processing temp files
+      - ./generated:/app/generated  # Shared Prisma client
+      - ./prisma:/app/prisma  # Shared Prisma schema
 
   postgres:
     image: postgres:16-alpine

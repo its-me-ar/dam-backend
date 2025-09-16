@@ -54,3 +54,19 @@ coverage/
 # Generated files
 generated/prisma
 swagger.yaml
+.env.docker
+
+# Microservice generated files
+microservices/bullmq-app/generated/
+microservices/image-worker/generated/
+microservices/video-worker/generated/
+
+# Microservice build outputs
+microservices/bullmq-app/dist/
+microservices/image-worker/dist/
+microservices/video-worker/dist/
+
+# Microservice logs
+microservices/bullmq-app/logs/
+microservices/image-worker/logs/
+microservices/video-worker/logs/

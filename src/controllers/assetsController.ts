@@ -3,11 +3,55 @@ import { S3Service } from "../services/S3Service";
 import logger from "src/config/logger";
 import { PrismaClient, AssetStatus, Prisma, JobStatus } from "generated/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { videoQueue } from "src/queues/video.queue";
-import { imageQueue } from "src/queues/image.queue";
+import { getRedisConnection } from "src/config/redis";
 
 const s3Service = new S3Service();
 const prisma = new PrismaClient();
+
+// Redis connection for publishing events (singleton)
+const redis = getRedisConnection();
+
+/**
+ * Send video job to BullMQ app
+ */
+async function publishVideoJob(assetId: string, storagePath: string) {
+	try {
+		const job = {
+			type: "video_processing",
+			data: {
+				asset_id: assetId,
+				storage_path: storagePath,
+				timestamp: new Date().toISOString(),
+			},
+		};
+
+		await redis.publish("bullmq_jobs", JSON.stringify(job));
+		logger.info(`[BullMQ] ✅ Sent video job for ${assetId}`);
+	} catch (error) {
+		logger.error(`[BullMQ] ❌ Failed to send video job for ${assetId}:`, error);
+	}
+}
+
+/**
+ * Send image job to BullMQ app
+ */
+async function publishImageJob(assetId: string, storagePath: string) {
+	try {
+		const job = {
+			type: "image_processing",
+			data: {
+				asset_id: assetId,
+				storage_path: storagePath,
+				timestamp: new Date().toISOString(),
+			},
+		};
+
+		await redis.publish("bullmq_jobs", JSON.stringify(job));
+		logger.info(`[BullMQ] ✅ Sent image job for ${assetId}`);
+	} catch (error) {
+		logger.error(`[BullMQ] ❌ Failed to send image job for ${assetId}:`, error);
+	}
+}
 
 /**
  * Generate presigned upload URL
@@ -152,38 +196,13 @@ export const completeAssetUpload = async (req: Request, res: Response) => {
 			data: { status: AssetStatus.COMPLETED },
 		});
 
-		// ✅ enqueue transcoding if asset is a video
+		// Send job to BullMQ app for processing
 		if (asset.mime_type.startsWith("video")) {
-			logger.info(`[AssetUpload] 🎬 Adding video job for ${asset.asset_id}`);
-			const job = await videoQueue.add("transcode", {
-				asset_id: asset.asset_id,
-				storage_path: asset.storage_path,
-			});
-			// record job
-			await prisma.transcodingJob.create({
-				data: {
-					asset_id: asset.asset_id,
-					job_id: String(job.id),
-					status: JobStatus.PENDING,
-					worker_name: "video-processing",
-					event_name: "enqueued",
-				},
-			});
+			logger.info(`[AssetUpload] 🎬 Sending video job to BullMQ for ${asset.asset_id}`);
+			await publishVideoJob(asset.asset_id, asset.storage_path);
 		} else if (asset.mime_type.startsWith("image")) {
-			logger.info(`[AssetUpload] 🖼️ Adding image job for ${asset.asset_id}`);
-			const job = await imageQueue.add("process-image", {
-				asset_id: asset.asset_id,
-				storage_path: asset.storage_path,
-			});
-			await prisma.transcodingJob.create({
-				data: {
-					asset_id: asset.asset_id,
-					job_id: String(job.id),
-					status: JobStatus.PENDING,
-					worker_name: "image-processing",
-					event_name: "enqueued",
-				},
-			});
+			logger.info(`[AssetUpload] 🖼️ Sending image job to BullMQ for ${asset.asset_id}`);
+			await publishImageJob(asset.asset_id, asset.storage_path);
 		} else {
 			logger.info(
 				`[AssetUpload] 📂 Asset ${asset.asset_id} is not video/image. Skipping workers.`,

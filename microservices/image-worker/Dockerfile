@@ -14,14 +14,14 @@ COPY prisma ./prisma
 COPY generated ./generated
 
 # Copy image worker app package files
-COPY image-worker-app/package*.json ./
+COPY microservices/image-worker/package*.json ./
 
 # Install dependencies (including dev dependencies for TypeScript compilation)
 RUN npm install
 
 # Copy image worker app source code
-COPY image-worker-app/src ./src
-COPY image-worker-app/tsconfig.json ./
+COPY microservices/image-worker/src ./src
+COPY microservices/image-worker/tsconfig.json ./
 
 # Create logs directory
 RUN mkdir -p logs

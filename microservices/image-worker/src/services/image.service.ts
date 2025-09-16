@@ -4,6 +4,7 @@ import logger from "../config/logger";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs";
+import { upsertImageMetadata } from "../utils/upsertImageMetadata";
 
 export class ImageService {
 	private s3Service: S3Service;
@@ -20,21 +21,64 @@ export class ImageService {
 	async processImage(assetId: string, storagePath: string): Promise<ImageProcessingResult> {
 		try {
 			logger.info(`🖼️ Processing image: ${assetId}`);
+			logger.info(`[ImageService] 🔍 Starting image processing for asset_id=${assetId}`);
 
 			// Download image from S3
+			logger.info(`[ImageService] ⬇️ Downloading image from S3: ${storagePath}`);
 			const localPath = await this.downloadImage(assetId, storagePath);
+			logger.info(`[ImageService] ✅ Downloaded image to: ${localPath}`);
 			
 			// Extract metadata
+			logger.info(`[ImageService] 🔍 Extracting metadata from image`);
 			const metadata = await this.extractMetadata(localPath);
+			logger.info(`[ImageService] ✅ Metadata extracted: ${JSON.stringify(metadata)}`);
 			
 			// Generate thumbnails
+			logger.info(`[ImageService] 🔍 Generating thumbnails for asset_id=${assetId}`);
 			const thumbnails = await this.generateThumbnails(assetId, localPath);
+			logger.info(`[ImageService] ✅ Generated ${thumbnails.length} thumbnails`);
 			
 			// Upload processed files back to S3
+			logger.info(`[ImageService] 🔍 Uploading processed files to S3`);
 			const processedFiles = await this.uploadProcessedFiles(assetId, localPath, thumbnails);
+			logger.info(`[ImageService] ✅ Uploaded ${processedFiles.length} files to S3`);
+
+			// Save metadata to database
+			logger.info(`[ImageService] 💾 Saving original metadata for asset_id=${assetId}`);
+			const stats = fs.statSync(localPath);
+			await upsertImageMetadata(
+				assetId,
+				"original",
+				`assets/${assetId}/processed.jpg`,
+				{
+					width: metadata.width || 0,
+					height: metadata.height || 0,
+					size: stats.size
+				}
+			);
+			logger.info(`[ImageService] ✅ Original metadata saved for asset_id=${assetId}`);
+
+			// Save thumbnail metadata
+			for (const thumbnail of thumbnails) {
+				const thumbnailKey = `assets/${assetId}/thumbnails/thumb-${thumbnail.config.width}x${thumbnail.config.height}.${thumbnail.config.format}`;
+				logger.info(`[ImageService] 💾 Saving thumbnail metadata for asset_id=${assetId}`);
+				await upsertImageMetadata(
+					assetId,
+					"thumbnail",
+					thumbnailKey,
+					{
+						width: thumbnail.config.width,
+						height: thumbnail.config.height,
+						size: fs.statSync(thumbnail.outputPath).size
+					}
+				);
+				logger.info(`[ImageService] ✅ Thumbnail metadata saved for asset_id=${assetId}`);
+			}
 
 			// Cleanup temp files
+			logger.info(`[ImageService] 🔍 Cleaning up temporary files`);
 			await this.cleanupTempFiles(localPath, thumbnails);
+			logger.info(`[ImageService] ✅ Cleaned up temporary files`);
 
 			logger.info(`✅ Successfully processed image: ${assetId}`);
 
@@ -125,13 +169,17 @@ export class ImageService {
 
 		// Upload original processed image
 		const originalKey = `assets/${assetId}/processed.jpg`;
-		await this.s3Service.upload(originalPath, originalKey);
+		const originalBuffer = fs.readFileSync(originalPath);
+		await this.s3Service.upload(originalKey, originalBuffer, 'image/jpeg');
 		uploadedFiles.push(originalKey);
 
 		// Upload thumbnails
 		for (const thumbnail of thumbnails) {
 			const thumbnailKey = `assets/${assetId}/thumbnails/thumb-${thumbnail.config.width}x${thumbnail.config.height}.${thumbnail.config.format}`;
-			await this.s3Service.upload(thumbnail.outputPath, thumbnailKey);
+			logger.info(`[ImageService] 📤 Uploading thumbnail to S3: ${thumbnailKey}`);
+			const thumbnailBuffer = fs.readFileSync(thumbnail.outputPath);
+			await this.s3Service.upload(thumbnailKey, thumbnailBuffer, `image/${thumbnail.config.format}`);
+			logger.info(`[ImageService] ✅ Uploaded thumbnail to S3: ${thumbnailKey}`);
 			uploadedFiles.push(thumbnailKey);
 		}
 

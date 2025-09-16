@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
 import { Worker } from "bullmq";
 import sharp from "sharp";
+import fs from "fs";
+import path from "path";
 import axios from "axios";
 import { S3Service } from "../services/S3Service";
 import { getQueueConnection } from "../config/redis";
@@ -26,23 +26,6 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 			`[ImageThumbnailWorker] 🚀 Generating thumbnail for asset_id=${asset_id}`,
 		);
 
-		// Create main transcoding job record
-		await prisma.transcodingJob.upsert({
-			where: { job_id: String(job.id) },
-			update: {
-				status: JobStatus.ACTIVE,
-				worker_name: "image-thumbnail",
-				event_name: "active",
-			},
-			create: {
-				asset_id,
-				job_id: String(job.id),
-				status: JobStatus.ACTIVE,
-				worker_name: "image-thumbnail",
-				event_name: "active",
-			},
-		});
-
 		try {
 			// 1. Create thumbnail
 			const tmpThumbnail = `/tmp/${asset_id}-thumbnail.jpg`;
@@ -57,18 +40,13 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 				size: thumbStats.size,
 			};
 
-			logger.info(
-				`[ImageThumbnailWorker] 📊 Thumbnail metadata: ${JSON.stringify(
-					thumbnailMetadata,
-				)}`,
-			);
-
 			// 2. Upload thumbnail
 			const parsedPath = path.parse(storagePath);
 			const thumbKey = path.join(
 				parsedPath.dir,
 				`${parsedPath.name}-thumbnail.jpg`,
 			);
+			logger.info(`[ImageThumbnailWorker] 📤 Uploading thumbnail to S3: ${thumbKey}`);
 			const presignedUrl = await s3Service.getPresignedUploadUrl(
 				thumbKey,
 				3600,
@@ -80,18 +58,17 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 				maxContentLength: Infinity,
 				maxBodyLength: Infinity,
 			});
-
-			logger.info(
-				`[ImageThumbnailWorker] 📤 Uploaded thumbnail to ${thumbKey}`,
-			);
+			logger.info(`[ImageThumbnailWorker] ✅ Uploaded thumbnail to S3: ${thumbKey}`);
 
 			// 3. Save thumbnail metadata
+			logger.info(`[ImageThumbnailWorker] 💾 Saving thumbnail metadata for asset_id=${asset_id}`);
 			await upsertImageMetadata(
 				asset_id,
 				"thumbnail",
 				thumbKey,
 				thumbnailMetadata,
 			);
+			logger.info(`[ImageThumbnailWorker] ✅ Thumbnail metadata saved for asset_id=${asset_id}`);
 
 			// Cleanup
 			fs.unlinkSync(tmpThumbnail);
@@ -112,7 +89,7 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 			}
 
 			logger.error(
-				`[ImageThumbnailWorker] 💥 Job ${job.id} for asset_id=${asset_id} failed: ${message}`,
+				`[ImageThumbnailWorker] ❌ Job ${job.id} failed: ${message}`,
 			);
 			throw err;
 		}
@@ -120,58 +97,41 @@ const imageThumbnailWorker = new Worker<ImageThumbnailJobData>(
 	{ connection: getQueueConnection() },
 );
 
-imageThumbnailWorker.on("active", job => {
-	if (!job) {return;}
-	const { asset_id } = job.data;
-	logger.debug(`[ImageThumbnailWorker] 🔄 Job ${job.id} started for asset_id=${asset_id}`);
+imageThumbnailWorker.on("active", job =>
 	prisma.transcodingJob
-		.updateMany({
-			where: { 
-				asset_id,
-				worker_name: "image-thumbnail"
-			},
-			data: { 
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
 				status: JobStatus.ACTIVE,
-				event_name: "active"
+				worker_name: "image-thumbnail",
+				event_name: "active",
 			},
 		})
-		.catch(() => {});
-});
-
+		.catch(() => {}),
+);
 imageThumbnailWorker.on("completed", job => {
-	if (!job) {return;}
-	const { asset_id } = job.data;
-	logger.info(`[ImageThumbnailWorker] ✅ Job ${job.id} completed for asset_id=${asset_id}`);
 	prisma.transcodingJob
-		.updateMany({
-			where: { 
-				asset_id,
-				worker_name: "image-thumbnail"
-			},
-			data: { 
+		.update({
+			where: { job_id: String(job.id) },
+			data: {
 				status: JobStatus.COMPLETED,
-				event_name: "completed"
+				worker_name: "image-thumbnail",
+				event_name: "completed",
 			},
 		})
 		.catch(() => {});
 });
-
-imageThumbnailWorker.on("failed", (job, err) => {
-	if (!job) {return;}
-	const { asset_id } = job.data;
-	logger.error(`[ImageThumbnailWorker] ❌ Job ${job.id} failed for asset_id=${asset_id}: ${err.message}`);
+imageThumbnailWorker.on("failed", (job, _err) =>
 	prisma.transcodingJob
-		.updateMany({
-			where: { 
-				asset_id,
-				worker_name: "image-thumbnail"
-			},
-			data: { 
+		.update({
+			where: { job_id: String(job?.id) },
+			data: {
 				status: JobStatus.FAILED,
-				event_name: "failed"
+				worker_name: "image-thumbnail",
+				event_name: "failed",
 			},
 		})
-		.catch(() => {});
-});
+		.catch(() => {}),
+);
 
 export default imageThumbnailWorker;

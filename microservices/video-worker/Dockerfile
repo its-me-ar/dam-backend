@@ -10,15 +10,15 @@ COPY prisma ./prisma
 COPY generated ./generated
 
 # Copy video worker app package files
-COPY video-worker-app/package*.json ./
+COPY microservices/video-worker/package*.json ./
 
 # Install dependencies (including dev dependencies for TypeScript compilation)
 RUN npm install
 
 # Copy video worker app source code
-COPY video-worker-app/src ./src
-COPY video-worker-app/scripts ./scripts
-COPY video-worker-app/tsconfig.json ./
+COPY microservices/video-worker/src ./src
+COPY microservices/video-worker/scripts ./scripts
+COPY microservices/video-worker/tsconfig.json ./
 
 # Create logs directory
 RUN mkdir -p logs

@@ -24,29 +24,10 @@ const imageWorker = new Worker<ImageJobData>(
 			`[ImageWorker] 🚀 Received job ${job.id} for asset_id=${asset_id}`,
 		);
 
-		// Create main transcoding job record
-		await prisma.transcodingJob.upsert({
-			where: { job_id: String(job.id) },
-			update: {
-				status: JobStatus.ACTIVE,
-				worker_name: "image-processing",
-				event_name: "active",
-			},
-			create: {
-				asset_id,
-				job_id: String(job.id),
-				status: JobStatus.ACTIVE,
-				worker_name: "image-processing",
-				event_name: "active",
-			},
-		});
-
 		try {
 			// 1. Download original image
 			const localInput = `/tmp/${asset_id}-input`;
-			logger.info(
-				`[ImageWorker] ⬇️ Downloading from S3: ${storage_path} -> ${localInput}`,
-			);
+			logger.info(`[ImageWorker] ⬇️ Downloading from S3: ${storage_path}`);
 			await s3Service.downloadToFile(storage_path, localInput);
 
 			// 2. Extract metadata
@@ -60,21 +41,18 @@ const imageWorker = new Worker<ImageJobData>(
 				size: stats.size,
 			};
 
-			logger.info(
-				`[ImageWorker] 📊 Original image metadata: ${JSON.stringify(
-					originalMetadata,
-				)}`,
-			);
-
 			// 3. Save original metadata
+			logger.info(`[ImageWorker] 💾 Saving original metadata for asset_id=${asset_id}`);
 			await upsertImageMetadata(
 				asset_id,
 				"original",
 				storage_path,
 				originalMetadata,
 			);
+			logger.info(`[ImageWorker] ✅ Original metadata saved for asset_id=${asset_id}`);
 
 			// 4. Enqueue thumbnail generation
+			logger.info(`[ImageWorker] 🔄 Enqueuing thumbnail generation for asset_id=${asset_id}`);
 			const thumbJob = await imageThumbnailQueue.add("generate-thumbnail", {
 				asset_id,
 				localPath: localInput,
@@ -100,20 +78,13 @@ const imageWorker = new Worker<ImageJobData>(
 			logger.info(
 				`[ImageWorker] 🖼️ Enqueued thumbnail generation for asset_id=${asset_id}`,
 			);
-
-			// Don't cleanup input file here - let thumbnail worker handle it
-			logger.info(
-				`[ImageWorker] 🎉 Job ${job.id} for asset_id=${asset_id} completed successfully`,
-			);
 		} catch (err: unknown) {
 			let message = "Unknown error";
 			if (err instanceof Error) {
 				message = err.message;
 			}
 
-			logger.error(
-				`[ImageWorker] 💥 Job ${job.id} for asset_id=${asset_id} failed: ${message}`,
-			);
+			logger.error(`[ImageWorker] ❌ Job ${job.id} failed: ${message}`);
 			throw err;
 		}
 	},
@@ -123,16 +94,15 @@ const imageWorker = new Worker<ImageJobData>(
 imageWorker.on("active", job => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
-	logger.debug(`[ImageWorker] 🔄 Job ${job.id} started for asset_id=${asset_id}`);
 	prisma.transcodingJob
 		.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "image-processing"
 			},
-			data: { 
+			data: {
 				status: JobStatus.ACTIVE,
-				event_name: "active"
+				event_name: "active",
 			},
 		})
 		.catch(() => {});
@@ -141,34 +111,32 @@ imageWorker.on("active", job => {
 imageWorker.on("completed", job => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
-	logger.info(`[ImageWorker] ✅ Job ${job.id} completed for asset_id=${asset_id}`);
 	prisma.transcodingJob
 		.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "image-processing"
 			},
-			data: { 
+			data: {
 				status: JobStatus.COMPLETED,
-				event_name: "completed"
+				event_name: "completed",
 			},
 		})
 		.catch(() => {});
 });
 
-imageWorker.on("failed", (job, err) => {
+imageWorker.on("failed", job => {
 	if (!job) {return;}
 	const { asset_id } = job.data;
-	logger.error(`[ImageWorker] ❌ Job ${job.id} failed for asset_id=${asset_id}: ${err.message}`);
 	prisma.transcodingJob
 		.updateMany({
 			where: { 
 				asset_id,
 				worker_name: "image-processing"
 			},
-			data: { 
+			data: {
 				status: JobStatus.FAILED,
-				event_name: "failed"
+				event_name: "failed",
 			},
 		})
 		.catch(() => {});
